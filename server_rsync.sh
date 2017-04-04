@@ -1,13 +1,12 @@
 #!/bin/bash
 #
-VERSION="2017-02-26 21:48"
+VERSION="2017-04-04 01:07"
 THIS_FILE="server_rsync.sh"
 #
 #@ Brief Description
-#@ This menu is extremely scaleable and can have nested sub-menus.
-#@ Each menu choice simply calls a function in the script.
-#@ Add a new menu choice by adding a comment in the script along
-#@ with the corresponding function.
+#@ This script synchronizes two directories using rsync.
+#@ Choose and select the directories to synchronize using either
+#@ the Dialog or Whiptail GUI or a text interface.
 #@
 #@ Code Change History
 #@
