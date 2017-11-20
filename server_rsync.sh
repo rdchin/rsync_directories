@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-VERSION="2017-11-20 17:42"
+VERSION="2017-11-20 17:49"
 THIS_FILE="server_rsync.sh"
 #
 #@ Brief Description
@@ -1135,7 +1135,7 @@ f_main_menu_text () {
       until [ "$CHOICE" = "0" ]
       do    # Start of Main Menu until loop.
             clear  # Clear screen.
-            echo "            Rsync Menu"
+            echo "            Main Menu"
             echo
             echo "0 (Q/q) - Quit this script."
             echo "1 (S/s) - Synchronize two directories."
