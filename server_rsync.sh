@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-VERSION="2017-04-04 01:07"
+VERSION="2017-11-20 17:42"
 THIS_FILE="server_rsync.sh"
 #
 #@ Brief Description
@@ -9,6 +9,10 @@ THIS_FILE="server_rsync.sh"
 #@ the Dialog or Whiptail GUI or a text interface.
 #@
 #@ Code Change History
+#@
+#@ 2017-11-20 *f_main_menu_gui improve visibility of menu choices.
+#@
+#@ 2017-04-04 *Updated Brief Description.
 #@
 #@ 2017-02-26 *f_any, f_any_source, f_any_target rewritten to allow
 #@             cleaner return to Main Menu when "Cancel" button is pressed.
@@ -1122,7 +1126,7 @@ f_display_log_gui () {
 # +----------------------------------------+
 #
 #  Inputs: #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#    Uses: CHOICE, MENU_TITLE
+#    Uses: CHOICE.
 # Outputs: None.
 #
 f_main_menu_text () {
@@ -1162,7 +1166,7 @@ f_main_menu_text () {
 # +----------------------------------------+
 #
 #  Inputs: #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#    Uses: CHOICE.
+#    Uses: CHOICE, MENU_TITLE.
 # Outputs: None.
 #
 f_main_menu_gui () {
@@ -1170,8 +1174,8 @@ f_main_menu_gui () {
       #      
       until [ "$CHOICE" = "0" ]
       do    # Start of Main Menu until loop.
-            MENU_TITLE=
-            CHOICE=$($1 --clear --title "Rsync Menu" --menu "\n\nUse (up/down arrow keys) or (1 to 5) or (letters):" 20 70 5 \
+            MENU_TITLE="Main Menu"
+            CHOICE=$($1 --clear --title "$MENU_TITLE" --menu "\n\nUse (up/down arrow keys) or (1 to 5) or (letters):" 15 70 6 \
             Quit "Quit this script." \
             Synchronize "Synchronize two directories." \
             Log-file "Show latest log file." \
