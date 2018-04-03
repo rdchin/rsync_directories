@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-VERSION="2017-11-20 17:49"
+VERSION="2018-04-03 14:56"
 THIS_FILE="server_rsync.sh"
 #
 #@ Brief Description
@@ -9,6 +9,9 @@ THIS_FILE="server_rsync.sh"
 #@ the Dialog or Whiptail GUI or a text interface.
 #@
 #@ Code Change History
+#@
+#@ 2018-04-03 *f_rsync_gui, f_code_history_gui allow dynamic resize of
+#@             dialog display to improve visibility.
 #@
 #@ 2017-11-20 *f_main_menu_gui improve visibility of menu choices.
 #@
@@ -760,6 +763,14 @@ f_rsync_gui () {
       #
       #  when SOURCE and/or TARGET mount-point does not exist. 
       #
+      # Get the screen resolution or X-window size.
+      # Get rows (height).
+      # Y=$(stty size | awk '{ print $1 }')
+      # Get columns (width).
+      X=$(stty size | awk '{ print $2 }')
+      #let Y=Y-17
+      let X=X-6
+      #
       if [ ! -d $SOURCE ] || [ ! -d $TARGET ] ; then
          #
          if [ ! -d $SOURCE ] ; then
@@ -777,7 +788,7 @@ f_rsync_gui () {
          clear  # Blank the screen.
          $1 --msgbox "Re-start this script once the external device is mounted properly\nat the mount-point directory." 7 70
       else
-         if ($1 --title "Confirmation of SOURCE/TARGET" --yesno "Synchronization by rsync from SOURCE to TARGET. \n\n From SOURCE directory: \n\"$SOURCE\" \n\n   To TARGET directory: \n\"$TARGET\" \n\n       Log file:\n$LOG_FILE\n\nDate stamp file:\n$TIME_FILE\n\nIs this correct? Last chance to abort.\n                 < No > aborts rsync." 22 68) then
+         if ($1 --title "Confirmation of SOURCE/TARGET" --yesno "Synchronization by rsync from SOURCE to TARGET. \n\n From SOURCE directory: \n\"$SOURCE\" \n\n   To TARGET directory: \n\"$TARGET\" \n\n       Log file:\n$LOG_FILE\n\nDate stamp file:\n$TIME_FILE\n\nIs this correct? Last chance to abort.\n                 < No > aborts rsync." 22 $X) then
             # Yes, use selected directories.
             f_rsync_gui2 $1
          else
@@ -785,6 +796,7 @@ f_rsync_gui () {
             $1 --title "!!! Abort rsync !!!" --msgbox "Aborting rsync operation." 8 30
          fi
       fi
+      unset X Y
 } # End of function f_rsync_gui
 #
 # +------------------------------------+
@@ -793,7 +805,7 @@ f_rsync_gui () {
 #
 #  Inputs: #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          SOURCE, TARGET, TARGET_FILESYSTEM, LOG_FILE, THIS_FILE, VERSION.
-#    Uses: X, TIME_FILE.
+#    Uses: TIME_FILE.
 # Outputs: None.
 #
 f_rsync_gui2 () {
@@ -1003,10 +1015,17 @@ f_code_history_txt () {
 # +----------------------------------------+
 #
 #  Inputs: THIS_DIR, THIS_FILE. $1 - "dialog" or "whiptail" The CLI GUI application in use.
-#    Uses: None.
+#    Uses: X.
 # Outputs: APP_NAME.
 #
 f_code_history_gui () {
+      # Get the screen resolution or X-window size.
+      # Get rows (height).
+      Y=$(stty size | awk '{ print $1 }')
+      # Get columns (width).
+      X=$(stty size | awk '{ print $2 }')
+      let Y=Y-4
+      #
       clear # Blank the screen.
       # Display Help (all lines beginning with "#@" but do not print "#@").
       # sed substitutes null for "#@" at the beginning of each line
@@ -1015,8 +1034,9 @@ f_code_history_gui () {
       # %f <FILENAME> page <num> of <pages> (Spacebar, PgUp/PgDn . . .)
       date>temp.txt ; echo "Script: $THIS_FILE">>temp.txt
       sed -n 's/^#@//'p $THIS_DIR/$THIS_FILE >> temp.txt
-      $1 --title "Code History (use arrow keys to scroll up/down/side-ways)" --textbox temp.txt 24 80
+      $1 --title "Code History (use arrow keys to scroll up/down/side-ways)" --textbox temp.txt $Y $X #24 80
       rm temp.txt
+      unset X
       #
 } # End of function f_code_history_gui
 #
