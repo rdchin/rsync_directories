@@ -1,15 +1,24 @@
 #!/bin/bash
 #
-# ©2020 Copyright 2020 Robert D. Chin
+# ©2021 Copyright 2021 Robert D. Chin
+# Email: RDevChin@Gmail.com
 #
-# Usage: bash server_rsync.sh
-#        (not sh server_rsync.sh)
+# Usage: source server_rsync.lib
 #
-# +----------------------------------------+
-# |        Default Variable Values         |
-# +----------------------------------------+
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
 #
-VERSION="2020-07-01 22:56"
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
 # +--------------------------------------------------------------------------+
 # |                                                                          |
 # |                 Customize Menu choice options below.                     |
@@ -18,7 +27,7 @@ VERSION="2020-07-01 22:56"
 #
 # Format: <#@@> <Menu Option> <#@@> <Description of Menu Option> <#@@> <Corresponding function or action or cammand>
 #
-#@@Exit#@@Exit to command-line prompt.#@@break
+#@@Exit#@@Exit this menu.#@@break
 #
 #@@About#@@Version information of this script.#@@f_about^$GUI
 #
@@ -31,6 +40,142 @@ VERSION="2020-07-01 22:56"
 #@@Log-file#@@Show latest log file.#@@f_display_log^$GUI
 #
 #@@Mount-points#@@Show mounted networked shares.#@@f_free^$GUI
+#
+# +----------------------------------------+
+# |        Default Variable Values         |
+# +----------------------------------------+
+#
+VERSION="2021-04-22 18:54"
+#
+# Commented out THIS_FILE since it will conflict other scripts which
+# use this library.
+#THIS_FILE=$(basename $0)
+#
+# +----------------------------------------+
+# |            Brief Description           |
+# +----------------------------------------+
+#
+#& Brief Description
+#&
+#& Library of BASH functions, server_rsync.lib is a child dependency
+#& used by the following scripts.
+#&
+#& Parent script: server_rsync.sh.
+#&
+#& See script server_rsync.sh for Edit History.
+#&
+#& Usage: source server_rsync.lib
+#&
+#&    This program is free software: you can redistribute it and/or modify
+#&    it under the terms of the GNU General Public License as published by
+#&    the Free Software Foundation, either version 3 of the License, or
+#&    (at your option) any later version.
+#&
+#&
+#&    This program is distributed in the hope that it will be useful,
+#&    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#&    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#&    GNU General Public License for more details.
+#&
+#&    You should have received a copy of the GNU General Public License
+#&    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# +----------------------------------------+
+# |           Code Change History          |
+# +----------------------------------------+
+#
+## Code Change History
+##
+## (Please see script "server_rsync.sh" for Code History information.)
+#
+# +----------------------------------------+
+# |        Function f_check_version        |
+# +----------------------------------------+
+#
+#     Rev: 2021-03-25
+#  Inputs: $1 - UI "dialog" or "whiptail" or "text".
+#          $2 - [OPTIONAL] File name to compare.
+#          FILE_TO_COMPARE.
+#    Uses: SERVER_DIR, MP_DIR, TARGET_DIR, TARGET_FILE, VERSION, TEMP_FILE, ERROR.
+# Outputs: ERROR.
+#
+# Summary: Check the version of a single, local file or script,
+#          FILE_TO_COMPARE with the version of repository file.
+#          If the repository file has latest version, then copy all 
+#          dependent files and libraries from the repository to local PC.
+#
+# TO DO enhancement: If local (LAN) repository is unavailable, then
+#          connect to repository on the web if available.
+#
+# Dependencies: f_version_compare.
+#
+f_check_version_TEMPLATE () {
+      #
+      #
+      #=================================================================
+      # EDIT THE LINES BELOW TO DEFINE THE LAN FILE SERVER DIRECTORY,
+      # LOCAL MOUNTPOINT DIRECTORY, LOCAL REPOSITORY DIRECTORY AND
+      # FILE TO COMPARE BETWEEN THE LOCAL PC AND (LAN) LOCAL REPOSITORY.
+      #=================================================================
+      #
+      #
+      # LAN File Server shared directory.
+      # SERVER_DIR="[FILE_SERVER_DIRECTORY_NAME_GOES_HERE]"
+        SERVER_DIR="//file_server/public"
+      #
+      # Local PC mount-point directory.
+      # MP_DIR="[LOCAL_MOUNT-POINT_DIRECTORY_NAME_GOES_HERE]"
+        MP_DIR="/mnt/file_server/public"
+      #
+      # Local PC mount-point with LAN File Server Local Repository full directory path.
+      # Example: 
+      #                   File server shared directory is "//file_server/public".
+      # Repository directory under the shared directory is "scripts/BASH/Repository".
+      #                 Local PC Mount-point directory is "/mnt/file_server/public".
+      #
+      # Local PC mount-point with LAN File Server Local Repository full directory path.
+      # LOCAL_REPO_DIR="$MP_DIR/[DIRECTORY_PATH_TO_LOCAL_REPOSITORY]"
+        LOCAL_REPO_DIR="$MP_DIR/scripts/BASH/Repository"
+      #
+      # Local PC file to be compared.
+      if [ $# -eq 2 ] ; then
+         # There are 2 arguments that have been passed to this function.
+         # $2 contains the file name to compare.
+         FILE_TO_COMPARE=$2
+      else
+         # $2 is null, so specify file name.
+         if [ -z "$FILE_TO_COMPARE" ] ; then
+            # FILE_TO_COMPARE is undefined so specify file name.
+            FILE_TO_COMPARE=$(basename $0)
+         fi
+      fi
+      #
+      # Version of Local PC file to be compared.
+      VERSION=$(grep --max-count=1 "VERSION" $FILE_TO_COMPARE)
+      #
+      FILE_LIST=$THIS_DIR/$THIS_FILE"_file_temp.txt"
+      ERROR=0
+      #
+      #
+      #=================================================================
+      # EDIT THE LINES BELOW TO SPECIFY THE FILE NAMES TO UPDATE.
+      # FILE NAMES INCLUDE ALL DEPENDENT SCRIPTS AND LIBRARIES.
+      #=================================================================
+      #
+      #
+      # Create list of files to update and write to temporary file, FILE_LIST.
+      #
+      echo "server_rsync.sh"           > $FILE_LIST  # <<<--- INSERT ACTUAL FILE NAME HERE.
+      echo "server_rsync.lib"         >> $FILE_LIST  # <<<--- INSERT ACTUAL FILE NAME HERE.
+      echo "common_bash_function.lib" >> $FILE_LIST  # <<<--- INSERT ACTUAL FILE NAME HERE.
+      #
+      f_version_compare $1 $SERVER_DIR $MP_DIR $LOCAL_REPO_DIR $FILE_TO_COMPARE "$VERSION" $FILE_LIST
+      #
+      if [ -r  $FILE_LIST ] ; then
+         rm  $FILE_LIST
+      fi
+      #
+}  # End of function f_check_version_TEMPLATE.
 #
 # +----------------------------------------+
 # |            Function f_free             |
