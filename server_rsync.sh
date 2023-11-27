@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# ©2021 Copyright 2021 Robert D. Chin
+# ©2023 Copyright 2023 Robert D. Chin
 # Email: RDevChin@Gmail.com
 #
 # Usage: bash server_rsync.sh
@@ -24,7 +24,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2021-04-22 18:54"
+VERSION="2023-11-23 21:49"
 THIS_FILE="$0"
 TEMP_FILE=$THIS_FILE"_temp.txt"
 GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
@@ -36,26 +36,31 @@ GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
 #================================================================
 #
 #
+#-------------------------------------------------
+# Set variables to check for network connectivity.
+#-------------------------------------------------
+#
+# Ping Local File Server Repository
+# PING_LAN_TARGET="[FILE SERVER NAME]"
+PING_LAN_TARGET="file_server"
+#
+# Ping Web File Server Repository
+# PING_WAN_TARGET="[WEB FILE REPOSITORY]"
+PING_WAN_TARGET="raw.githubusercontent.com"
+#
 #--------------------------------------------------------------
 # Set variables to mount the Local Repository to a mount-point.
 #--------------------------------------------------------------
 #
 # LAN File Server shared directory.
-# SERVER_DIR="[FILE_SERVER_DIRECTORY_NAME_GOES_HERE]"
-  SERVER_DIR="//file_server/public"
+SERVER_DIR="//file_server/public"
 #
 # Local PC mount-point directory.
-# MP_DIR="[LOCAL_MOUNT-POINT_DIRECTORY_NAME_GOES_HERE]"
-  MP_DIR="/mnt/file_server/public"
+MP_DIR="/mnt/file_server/public"
 #
-# Local PC mount-point with LAN File Server Local Repository full directory path.
-# Example: 
-#                   File server shared directory is "//file_server/public".
-# Repostory directory under the shared directory is "scripts/BASH/Repository".
-#                 Local PC Mount-point directory is "/mnt/file_server/public".
-#
-# LOCAL_REPO_DIR="$MP_DIR/[DIRECTORY_PATH_TO_LOCAL_REPOSITORY]"
-  LOCAL_REPO_DIR="$MP_DIR/scripts/BASH/Repository"
+# Local PC target directory, sub-directory below mount-point directory.
+# TARGET_DIR="[ LOCAL MOUNT-POINT DIRECTORY/REPOSITORY SUB-DIRECTORY PATH GOES HERE ]"
+TARGET_DIR="/mnt/file_server/public/Repository"
 #
 #
 #=================================================================
@@ -71,15 +76,22 @@ GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
 #
 # Temporary file FILE_LIST contains a list of file names of dependent
 # scripts and libraries.
+# Format: [File Name]^[Local/
 #
 FILE_LIST=$THIS_FILE"_file_temp.txt"
 #
 # Format: [File Name]^[Local/Web]^[Local repository directory]^[web repository directory]
-echo "server_rsync.lib^Local^$LOCAL_REPO_DIR^https://raw.githubusercontent.com/rdchin/rsync_directories/master/server_rsync.lib" > $FILE_LIST
-echo "common_bash_function.lib^Web^/mnt/file_server/public/LIBRARY/PC-stuff/PC-software/BASH_Scripting_Projects/Repository^https://raw.githubusercontent.com/rdchin/BASH_function_library/master/" >> $FILE_LIST
+echo "$THIS_FILE^Local^/mnt/file_server/public/Repository"        > $FILE_LIST
+echo "server_rsync.lib^Local^/mnt/file_server/public/Repository" >> $FILE_LIST
+echo "common_bash_function.lib^Web^/mnt/file_server/public/Repository^https://raw.githubusercontent.com/rdchin/BASH_function_library/master/" >> $FILE_LIST
 #
-# Create a name for a temporary file which will have a list of files which need to be downloaded.
+# Create a list of files FILE_DL_LIST, which need to be downloaded.
+
+# From FILE_LIST (list of script and library files), find the files which
+# need to be downloaded and put those file names in FILE_DL_LIST.
+#
 FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
+# Format: [File Name]^[Local/Web]^[Local repository directory]^[web repository directory]
 #
 # +----------------------------------------+
 # |            Brief Description           |
@@ -145,40 +157,109 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #?                      --ver dialog
 #
 # +----------------------------------------+
-# |                Code Notes              |
-# +----------------------------------------+
-#
-# To disable the [ OPTION ] --update -u to update the script:
-#    1) Comment out the call to function fdl_download_missing_scripts in
-#       Section "Start of Main Program".
-#
-# To completely delete the [ OPTION ] --update -u to update the script:
-#    1) Delete the call to function fdl_download_missing_scripts in
-#       Section "Start of Main Program".
-#    2) Delete all functions beginning with "f_dl"
-#    3) Delete instructions to update script in Section "Help and Usage".
-#
-# To disable the Main Menu:
-#    1) Comment out the call to function f_menu_main under "Run Main Code"
-#       in Section "Start of Main Program".
-#    2) Add calls to desired functions under "Run Main Code"
-#       in Section "Start of Main Program".
-#
-# To completely remove the Main Menu and its code:
-#    1) Delete the call to function f_menu_main under "Run Main Code" in
-#       Section "Start of Main Program".
-#    2) Add calls to desired functions under "Run Main Code"
-#       in Section "Start of Main Program".
-#    3) Delete the function f_menu_main.
-#    4) Delete "Menu Choice Options" in this script located under
-#       Section "Customize Menu choice options below".
-#       The "Menu Choice Options" lines begin with "#@@".
-#
-# +----------------------------------------+
 # |           Code Change History          |
 # +----------------------------------------+
 #
 ## Code Change History
+##
+## 2023-11-23 *f_any_source, f_any_target changed the default mount points.
+##
+## 2023-11-22 *Main Menu bug fixed that generated script would fail
+##             server_rsync.sh_menu_main_generated.lib: 
+##             line 49: syntax error.
+##             `scotty                    "Exit") break  ;;'
+##
+##             I changed the menu item "File Managers" and put quotation
+##             marks around the parameter which specified the directory.
+##             The forward slashes caused the syntax error.
+##
+##             Change from: #@@f_file_manager_select^$GUI^/mnt/scotty
+##               Change to: #@@f_file_manager_select^$GUI^"/mnt"
+##
+##            *f_any added automatic detection of the Target filesystem by
+##              using the findmnt command.
+##            *f_rsync_command changed to use case statements rather than
+##             if-then statements. Also added more rsync options for the
+##             linux filesystems to preserve file permissions, group, owner,
+##             times, and symlinks.
+##            *f_show_mount_points moved to common_bash_function.lib.
+##             Changed display for "md" RAID devices
+##             to show under "local mounted block devices" rather than
+##             under "remote file servers".
+##
+## 2023-11-19 *f_any, f_any_source, f_any_target improved error checking
+##             and added question on filesystem.
+##
+## 2023-11-16 *Main Menu (Note: Please see 2023-11-22 bug fix for actual
+##             solution to the bug below).
+##            *Main Menu deleted a forward-slash in a menu item description
+##             which caused the script to exit on first run. Subsequent
+##             runs worked. On first run, the generated code for the Main
+##             Menu was corrupted on the first menu item even though it
+##             was not the item which included the forward-slash.
+##
+## 2023-11-15 *f_any_source, f_any_target updated to use f_ask_question,
+##             and f_select_dir.
+##
+## 2023-11-13 *f_show_mount_points changed options for lsblk command
+##             to improve display of RAID member devices.
+##            *f_rsync_go_nogo_rsync added changing name of log file.
+##
+## 2023-11-10 *f_show_mount_points added "FSTYPE" on local storage drives
+##             when displaying the information for the local drives.
+##             This indicates the local drives which are part of a RAID.
+##
+## 2023-11-05 *f_show_mount_points updated (from script, mountup.lib).
+##             Improved display of information, includes information on
+##             both mounted and unmounted local drive devices.
+##
+## 2022-12-01 *f_check_version, f_show_mount_points updated to latest
+##             standards.
+##            *f_any, f_any_source, f_any_target, f_go_nogo_rsync,
+##             f_rsync, f_rsync2, f_display_log improved comments,
+##             log file management, obscure bug fixed.
+##            *f_display_var_log_rsync added to preserve the original
+##             f_display_log code which finds latest log file.
+##
+## 2022-06-22 *f_go_nogo_rsync, f_rsync, f_rsync2, f_rsync_command added
+##             parameter passing of directories and files.
+##             f_go_nogo_rsync added check for empty source directory and
+##             abort if empty.
+##            *f_rsync_command changed log file date/time stamp format.
+##
+## 2022-04-20 *fdl_download_missing_scripts fixed bug to prevent downloading
+##             from the remote repository if the local repository was
+##             unavailable and the script was only in the local repository.
+##
+## 2022-04-02 *f_any_target changed default mount-point
+##             from /media/robert/usb1
+##               to /media/usb-dev1
+##
+## 2022-03-28 *f_file_manager_select added.
+##            *Section "Main Menu" added "File Managers".
+##            *f_free removed, f_show_mount_points added for better display.
+##            *f_show_mount_points added information from lsblk command.
+##
+## 2022-03-25 *f_rsync_command added manpage documentation in comment lines.
+##             deleted rsync option -l --links to create symlinks on the
+##             destination. Changed the command to use the GNU standardized
+##             parameters (long form) which is more descriptive.
+##            *f_rsync2 no longer have an automatic display of the time log
+##             summary which is now incorporated into the log file.
+##
+## 2022-03-22 *f_any_source, f_any_target changed default directory.
+##
+## 2022-03-13 *Section "Server_Rsync_Menu" updated to latest standards.
+##             Added version checking to menu.
+##            *f_rsync2 included the time log summary into the
+##             /var/log/rsync/ log file.
+##            *f_rsync_command renamed log files to latest standard.
+##            *f_any renamed TIME_FILE, LOG_FILE to be more descriptive.
+##
+## 2021-09-23 *f_show_log_gui deleted as obsolete.
+##            *f_go_nogo_rsync, f_rsync fixed bug with go-nogo question and
+##             moved question to f_go_nogo_rsync.
+##            *Improved comments and readability.
 ##
 ## 2021-02-13 *Updated to latest standards.
 ##
@@ -188,9 +269,9 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 ##             Last release without dependency on common_bash_function.lib.
 ##             *Updated to latest standards.
 ##
-## 2020-05-06 *f_msg_ui_file_box_size, f_msg_ui_file_ok bug fixed in display.
+## 2020-05-06 *f_msg_ui_file_box_size, f_msg_ui_file_ok bug fixed.
 ##
-## 2020-05-04 *f_update_menu_gui adjusted menu display parameters for Whiptail.
+## 2020-05-04 *f_update_menu_gui adjusted Whiptail menu display parameters.
 ##
 ## 2020-04-25 *Updated to latest versions of functions.
 ##
@@ -218,7 +299,7 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 ##
 ## 2016-04-18 *Changed dialog msgbox to infobox to simplify user messages.
 ##
-## 2016-03-31 *f_rsync changed from: 
+## 2016-03-31 *f_rsync changed from:
 ##             sudo rsync -rltvhi --progress --delete --force
 ##             --exclude '.gvfs' --log-file=$LOG_FILE $SOURCE $TARGET
 ##
@@ -226,23 +307,24 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 ##             sudo rsync -rltvhi --progress --delete --size-only
 ##             --exclude '.gvfs' --log-file=$LOG_FILE $SOURCE $TARGET
 ##
-## 2015-11-27 *f_rsync_gui2 include the start and end times in the same window
-##             as the summary of actions.
+## 2015-11-27 *f_rsync_gui2 include the start and end times in the same
+##             window as the summary of actions.
 ##
-## 2015-10-10 *f_rsync_text, f_rsync_gui added check for existence of log file
-##             /var/log/rsync.
+## 2015-10-10 *f_rsync_text, f_rsync_gui added check for existence of
+##             log file /var/log/rsync.
 ##
 ## 2015-09-09 *rsync_gui call f_free_gui to display mount-points if a bad
 ##             mount-point is specified.
 ##
 ## 2015-09-07 *f_free, f_free_gui changed options of df command to display
-##             local plus networked mount-points and exclude virtual filesystems.
+##             local and networked mount-points, while excluding virtual
+##             file systems.
 ##
 ## 2015-08-27 *f_free_txt, f_free_gui used "type" command for testing
 ##             whether "df" command has advanced options.
 ##
-## 2015-08-21 *f_rsync_text2, f_display_log changed to use "more" application
-##             if "most" application is not installed (using "type" command).
+## 2015-08-21 *f_rsync_text2, f_display_log changed to use the "more" app
+##             if the "most" application is not installed.
 ##
 ## 2015-08-19 *f_display_log, f_display_log_gui added.
 ##
@@ -273,7 +355,7 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 ##
 ## 2015-02-17 *f_main_menu_text, f_main_menu_gui changed D1, D2 to X1, X2
 ##             and changed "df" to "Free".
-##            *Change TIME_FILE from rsync_last_date.null* 
+##            *Change TIME_FILE from rsync_last_date.null*
 ##             to rsync_time_stamp*.
 ##
 ## 2015-01-27_*f_pub2, f_pnb2 corrected spelling of log file.
@@ -318,7 +400,7 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #    Uses: X.
 # Outputs: None.
 #
-# Synopsis: Display lines of text beginning with a given comment delimiter.
+# Summary: Display lines of text beginning with a given comment delimiter.
 #
 # Dependencies: f_message.
 #
@@ -432,7 +514,7 @@ f_menu_main () { # Create and display the Main Menu.
       #       ***the size of the menu window will be too narrow.
       #
       # Menu title MUST use underscores instead of spaces.
-      MENU_TITLE="Rsync_Menu"
+      MENU_TITLE="Server_Rsync_Menu"
       TEMP_FILE=$THIS_DIR/$THIS_FILE"_menu_main_temp.txt"
       #
       f_create_show_menu $1 $GENERATED_FILE $MENU_TITLE $MAX_LENGTH $MAX_LINES $MAX_CHOICE_LENGTH $TEMP_FILE
@@ -619,6 +701,8 @@ fdl_mount_local () {
             echo "------------------------------------------------------------------------"
             echo
          fi
+         #
+         # Discard these variables.
          unset SMBUSER PASSWORD
       fi
       #
@@ -676,7 +760,7 @@ fdl_source () {
 # Outputs: ANS.
 #
 # Summary: This function can be used when script is first run.
-#          It verifies that all dependencies are satisfied. 
+#          It verifies that all dependencies are satisfied.
 #          If any are missing, then any missing required dependencies of
 #          scripts and libraries are downloaded from a LAN repository or
 #          from a repository on the Internet.
@@ -685,7 +769,7 @@ fdl_source () {
 #          directory and then when it is executed or run, it will download
 #          automatically all other needed files and libraries, set them to be
 #          executable, and source the required libraries.
-#          
+#
 #          Cannot be dependent on "common_bash_function.lib" as this library
 #          may not yet be available and may need to be downloaded.
 #
@@ -703,7 +787,7 @@ fdl_download_missing_scripts () {
       # ****************************************************
       #
       # While-loop will read the file names listed in FILE_LIST (list of
-      # script and library files) and detect which are missing and need 
+      # script and library files) and detect which are missing and need
       # to be downloaded and then put those file names in FILE_DL_LIST.
       #
       while read LINE
@@ -756,7 +840,7 @@ fdl_download_missing_scripts () {
                   #
                   # If a file only found in the Local Repository has source changed
                   # to "Web" because LAN connectivity has failed, then do not download.
-                  if [ -z DL_REPOSITORY ] && [ $DL_SOURCE = "Web" ] ; then
+                  if [ -z $DL_REPOSITORY ] && [ $DL_SOURCE = "Web" ] ; then
                      ERROR=1
                   fi
                   #
@@ -771,7 +855,7 @@ fdl_download_missing_scripts () {
                              # So download from Web Repository.
                              fdl_dwnld_file_from_web_site $DL_REPOSITORY $DL_FILE
                           else
-                             # Sucessful mount of LAN File Server directory. 
+                             # Sucessful mount of LAN File Server directory.
                              # Continue with download from Local Repository on LAN File Server.
                              fdl_dwnld_file_from_local_repository $TARGET_DIR $DL_FILE
                              #
@@ -915,7 +999,7 @@ f_script_path
 TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
 #
 # If command already specifies GUI, then do not detect GUI.
-# i.e. "bash example.sh dialog" or "bash example.sh text".
+# i.e. "bash menu.sh dialog" or "bash menu.sh text".
 if [ -z $GUI ] ; then
    # Test for GUI (Whiptail or Dialog) or pure text environment.
    f_detect_ui
