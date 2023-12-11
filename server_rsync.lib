@@ -74,7 +74,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2023-11-23 21:49"
+VERSION="2023-12-11 00:33"
 #
 # Commented out THIS_FILE since it will conflict other scripts which
 # use this library.
@@ -151,11 +151,11 @@ f_check_version () {
       #
       # LAN File Server shared directory.
       # SERVER_DIR="[FILE_SERVER_DIRECTORY_NAME_GOES_HERE]"
-        SERVER_DIR="//scotty/files"
+        SERVER_DIR="//source_server/files"
       #
       # Local PC mount-point directory.
       # MP_DIR="[LOCAL_MOUNT-POINT_DIRECTORY_NAME_GOES_HERE]"
-        MP_DIR="/mnt/scotty/files"
+        MP_DIR="/mnt/target_pc/files"
       #
       # Local PC mount-point with LAN File Server Local Repository full directory path.
       # Example:
@@ -165,7 +165,7 @@ f_check_version () {
       #
       # Local PC mount-point with LAN File Server Local Repository full directory path.
       # LOCAL_REPO_DIR="$MP_DIR/[DIRECTORY_PATH_TO_LOCAL_REPOSITORY]"
-        LOCAL_REPO_DIR="/mnt/scotty/files/LIBRARY/PC-stuff/PC-software/BASH_Scripting_Projects/Repository"
+        LOCAL_REPO_DIR="/mnt/files/BASH_Scripting_Projects/Repository"
       #
       # Local PC file to be compared.
       if [ $# -eq 2 ] ; then
@@ -224,23 +224,25 @@ f_check_version () {
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#    Uses: X, Y.
-# Outputs: SOURCE_DIR, TARGET_DIR, TIME_FILE, LOG_FILE.
+#    Uses: TFSTAMP
+# Outputs: SOURCE_DIR, TARGET_DIR, SOURCE_DIR_STR_NAME, TARGET_DIR_STR_NAME, TARGET_FILESYSTEM TIME_FILE, LOG_FILE.
 #
 # Summary: Select Source and Target directories. Create log file name.
 #
-# Dependencies: f_any_source, f_any_target, f_go_nogo_rsync.
+# Dependencies: f_any_select f_go_nogo_rsync.
 #
 f_any () {
       #
-      f_any_source $1
+      # Select SOURCE_DIR.
+      f_any_select $1 "Source"
       #
       if [ $ERROR -eq 0 ] && [ -n "$SOURCE_DIR" ] ; then
-         f_any_target $1
+         # Select TARGET_DIR.
+         f_any_select $1 "Target"
          #
          case $TARGET_DIR in
-              "")
-                 f_message $1 "NOK" "Invalid TARGET directory" "Invalid TARGET directory, returning to MAIN menu."
+              ""| $SOURCE_DIR)
+                 f_message $1 "NOK" "Invalid Target directory" "Invalid Target directory is either null or same as Source directory, returning to MAIN menu."
               ;;
               *)
                  # Add detection of filesystem of TARGET directory and set variable TARGET_FILESYSTEM accordingly.
@@ -249,10 +251,10 @@ f_any () {
                  # "lsblk --list --output name,fstype,mountpoint"
                  #
                  # TARGET_FILESYSTEM is the file system of the backup media (i.e. linux, FAT, NTFS),
-                 # used to determine best rsync options.
+                 # used to determine the best rsync options for that file system.
                  #
                  # Find the filesystem used by the TARGET_DIR.
-                 TARGET_FILESYSTEM=$(findmnt --noheadings --target /media/usb-dev1/robert/Data/archive/dad | awk '{ print $3 }')
+                 TARGET_FILESYSTEM=$(findmnt --noheadings --target $TARGET_DIR | awk '{ print $3 }')
                  #                
                  # Create SOURCE_DIR_STR_NAME; Get source directory and substitute "_" for "/".
                  SOURCE_DIR_STR_NAME=$(echo $SOURCE_DIR | sed -e 's|/|_|g' -e 's|_$||g')
@@ -278,126 +280,231 @@ f_any () {
                  LOG_FILE="rsync_from_PC"_$SOURCE_SERVER_NAME"_"$SOURCE_DIR_STR_NAME"_to_PC_"$TARGET_SERVER_NAME"_"$TARGET_DIR_STR_NAME"_"$TFSTAMP".log"
                  #
                  # Proceed with rsync procedure.
-                 f_go_nogo_rsync $1 $SOURCE_DIR $TARGET_DIR $TIME_FILE $LOG_FILE
+                 f_go_nogo_rsync $1 $SOURCE_DIR $TARGET_DIR $TIME_FILE $LOG_FILE $SOURCE_SERVER_NAME $TARGET_SERVER_NAME
+                 #
+                 unset TFSTAMP
                  ;;
          esac
          #
       else
-         f_message $1 "NOK" "Invalid SOURCE directory" "Invalid SOURCE directory, returning to MAIN menu."
+         f_message $1 "NOK" "Invalid Source directory" "Invalid Source directory is either null or error, returning to MAIN menu."
       fi
       #
 } # End of function f_any
 #
 # +----------------------------------------+
-# |          Function f_any_source         |
+# |          Function f_any_select         |
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
+#          $2 - "Source", "Target".
 #    Uses: X, Y.
-# Outputs: ERROR, SOURCE_SERVER_NAME, SOURCE_DIR.
+# Outputs: ERROR, LOCAL_SERVER_NAME, SOURCE_DIR, TARGET_DIR.
 #
-# Summary: Select Source directory.
+# Summary: Select Source/Target directory.
 #
 # Dependencies: None.
 #
-f_any_source () {
+f_any_select () {
       #
-      # Blank the screen.
-      clear
+      TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
       #
-      # Make the default SOURCE Server the localhost.
-      SOURCE_SERVER_NAME=$(cat /etc/hostname)
+      # Get /mnt/ file server mount-points
+      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' > $TEMP_FILE"_directory_menu.txt"
       #
-      SOURCE_DIR=""
+      # Need to get rid of the forward-slashes in the first column of the  menu items.
+      # Replace "/" with "~" in directory names in the first column of the menu items and output first column into temp file1.
+      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' | awk '{ print $1 }' | sed -e 's|^/||g' -e 's|/|~|g' > $TEMP_FILE"_directory_column_1.txt"
+      # Output second column into temp file2.
+      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' | awk '{ print $2 }' > $TEMP_FILE"_directory_column_2.txt"
       #
-      f_ask_question $1 "Source File Server Name" "Enter name of SOURCE file server" $SOURCE_SERVER_NAME
+      # Glue both first and second column together and output into temp file.
+      paste $TEMP_FILE"_directory_column_1.txt" $TEMP_FILE"_directory_column_2.txt" > $TEMP_FILE"_directory_menu.txt"
       #
-      # Did the user try to Cancel or Esc?
-      if [ $ERROR -eq 0 ] ; then
-         # No, proceed with rsync process.
-         SOURCE_SERVER_NAME=$ANS
-         #
-         f_select_dir $1 "File Server Source Directory" "/mnt/$SOURCE_SERVER_NAME" 1
-         #
-         # Did the user try to Cancel or Esc?
-         if [ $ERROR -eq 0 ] ; then
-            # No, proceed with rsync process.
-            SOURCE_DIR=$ANS
-            #
-            # Add trailing (/) slash if it is missing so that files within $SOURCE_DIR are rsynced.
-            # Otherwise the entire directory $SOURCE_DIR will be created as a sub-directory of $SOURCE_DIR.
-            case $SOURCE_DIR in
-                 */)
-                     # Trailing slash is included and not missing.
-                 ;;
-                 *)
-                     # Trailing slash is missing.
-                     # Add trailing slash.
-                     SOURCE_DIR=$(echo -n $SOURCE_DIR"/" )
-                ;;
-            esac
-         else
-            # Yes, Cancel or ESC or error.
-            f_message $1 "OK" "Some error" "Error ERROR=$ERROR  SOURCE_DIR=$SOURCE_DIR"
-         fi
+      rm $TEMP_FILE"_directory_column_1.txt" $TEMP_FILE"_directory_column_2.txt"
+      #
+      # Set DEV to "Source" or "Target"
+      DEV=$2
+      #
+      # Insert field marker "#@@" that the menu will use to format data.
+      # When a menu item is selected, run function f_source_target_selected^$GUI^<selected menu item>
+      awk '{ print "#@@"$1"#@@"$2"#@@f_source_target_selected^$GUI^$DEV^"$1 }' $TEMP_FILE"_directory_menu.txt" > $TEMP_FILE"_directory_menu2.txt"
+      #
+      # Put double-quotes around the 2nd phrase delimited by "#@@" which contains the mount point directory.
+      # The forward-slashes (/) in the directory may mess up the creation of the data array for the menu by f_menu_arrays.
+      sed -i -e 's|#@@|&"|2' -e 's|#@@|"&|3' $TEMP_FILE"_directory_menu2.txt"
+      #
+      # Save output file to temp file.
+      mv $TEMP_FILE"_directory_menu2.txt" $TEMP_FILE"_directory_menu.txt"
+      #
+      # Insert the first menu option at the first line.
+      sed -i '1i #@@Exit#@@Return to previous menu.#@@break' $TEMP_FILE"_directory_menu.txt"
+      #
+      GENERATED_FILE=$THIS_DIR/$THIS_FILE"_directory_menu_generated.lib"
+      #
+      # Create generated menu script from array data.
+      #
+      # Note: ***If Sub-Menu title contains spaces,
+      #       ***the size of the menu window will be too narrow.
+      #
+      # Menu title MUST substitute underscores for spaces.
+      MENU_TITLE="$2_Directory_Menu"
+      #
+      #
+      #==================================================================
+      # EDIT THE LINE BELOW TO DEFINE $ARRAY_FILE AS THE ACTUAL FILE NAME
+      # (LIBRARY) WHERE THE MENU ITEM DATA IS LOCATED.
+      # THE LINES OF DATA ARE PREFIXED BY "#@@".
+      #==================================================================
+      #
+      #
+      # Specify library file name with menu item data.
+      #ARRAY_FILE=$TEMP_FILE"_device_menu.txt"
+      ARRAY_FILE=$TEMP_FILE"_directory_menu.txt"
+      #
+      # Create arrays from data.
+      f_menu_arrays $ARRAY_FILE
+      #
+      # Create and show menu of local devices.
+      f_create_show_menu $1 $GENERATED_FILE $MENU_TITLE $MAX_LENGTH $MAX_LINES $MAX_CHOICE_LENGTH $TEMP_FILE
+      #
+      # Was a local device to mount selected?
+      if [ -z "$ANS" ] ; then
+         # No, exit this function
+         f_message $1 "NOK" "Directory Selection Error" "No directory specified."
+         return 1
       fi
       #
-} # End of function f_any_source
+      LOCAL_DIR=$ANS
+      #
+      LOCAL_SERVER_NAME=$(cat /etc/hostname)
+      #
+      TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
+      #
+      if [ -r $GENERATED_FILE ] ; then
+         rm $GENERATED_FILE
+      fi
+      #
+      if [ -r $ARRAY_FILE ] ; then
+         rm $ARRAY_FILE
+      fi
+      #
+      # Delete temporary file.
+      if [ -e $TEMP_FILE ] ; then
+         rm $TEMP_FILE
+      fi
+      #
+      # Delete temporary file.
+      if [ -e $TEMP_FILE"_directory_menu.txt" ] ; then
+         rm $TEMP_FILE"_directory_menu.txt"
+      fi
+      #
+      # Delete temporary file.
+      if [ -e $THIS_DIR/$THIS_FILE"_menu_local_storage_generated.lib" ] ; then
+         rm $THIS_DIR/$THIS_FILE"_menu_local_storage_generated.lib"
+      fi
+      #
+      # Delete temporary file.
+      if [ -e $THIS_DIR/$THIS_FILE"_menu_local_storage_temp.txt" ] ; then
+         rm $THIS_DIR/$THIS_FILE"_menu_local_storage_temp.txt"
+      fi
+      #
+} # End of function f_any_select
 #
 # +----------------------------------------+
-# |          Function f_any_target         |
+# |   Function f_source_target_selected    |
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#    Uses: X, Y.
-# Outputs: ERROR, TARGET_SERVER_NAME, TARGET_DIR.
+#          $2 - "Source" or "Target".
+#          $3 - Menu choice data.
+#    Uses: None.
+# Outputs: ANS.
 #
-# Summary: Select Target directory (trailing slash "/" required by rsync).
+# Summary: When a directory is chosen from the  "Storage Device Menu", 
+#          this function is run to acknowledge the menu item chosen and 
+#          to set the chosen menu item to $ANS.
 #
-# Dependencies: None.
+# Dependencies: f_any_select.
 #
-f_any_target () {
+f_source_target_selected () {
+      ERROR=0
       #
-      # Blank the screen.
-      clear
+      # Directory name has "~" in path to prevent f_menu_arrays and f_create_show_menu called by f_any_select
+      # from being messed up with the "/" forward slashes in the directory name.
       #
-      # Make the default TARGET Server the localhost.
-      TARGET_SERVER_NAME=$(cat /etc/hostname)
+      # Now that the directory has been chosen, restore the true directory name.
+      # Substitute "/" for "~" to restore true directory name.
+      # Output directory name, set $ANS to directory name string.
+      ANS="/"$(echo $3 | sed 's|~|/|g')
+      case $2 in
+           Source)
+              f_select_dir $1 "$2 Directory" "$ANS" 1
+              #
+              # Did the user try to Cancel or Esc?
+              if [ $ERROR -eq 0 ] ; then
+                 # No, proceed with rsync process.
+                 # Set Source Directory.
+                 SOURCE_DIR="$ANS"
+                 #
+                 # Set Source server name.
+                 SOURCE_SERVER_NAME=$(findmnt --noheadings --target $SOURCE_DIR | awk '{ print $1 }' | awk -F "/" '{ print $3 }')
+                 # Add trailing (/) slash if it is missing so that files within $SOURCE_DIR are rsynced.
+                 # Otherwise the entire directory $SOURCE_DIR will be created as a sub-directory of $TARGET_DIR.
+                 case $SOURCE_DIR in
+                      */)
+                          # Trailing slash is included and not missing.
+                      ;;
+                      *)
+                          # Trailing slash is missing.
+                          # Add trailing slash.
+                          SOURCE_DIR=$(echo -n $SOURCE_DIR"/" )
+                      ;;
+                 esac
+                 #
+                 # Exit from Storage Source Device Menu
+                 CHOICE="QUIT"
+              else
+                 # Yes, Cancel or Esc.
+                 SOURCE_DIR=""
+                 f_message $1 "NOK" "Invalid $2 directory" "Cancel or Esc pressed, returning to $2 Directory Menu."
+              fi
+           ;;
+           Target)
+              f_select_dir $1 "Recipient $2 Directory" "$ANS" 1
+              #
+              # Did the user try to Cancel or Esc?
+              if [ $ERROR -eq 0 ] ; then
+                 # No, proceed with rsync process.
+                 # Set Source Directory.
+                 TARGET_DIR="$ANS"
+                 #
+                 # Set Target server name.
+                 TARGET_SERVER_NAME=$(findmnt --noheadings --target $TARGET_DIR | awk '{ print $1 }' | awk -F "/" '{ print $3 }')
+                 #
+                 # Add trailing (/) slash if it is missing so that files within $TARGET_DIR are rsynced.
+                 # Otherwise the entire directory $SOURCE_DIR will be created as a sub-directory of $TARGET_DIR.
+                 case $TARGET_DIR in
+                      */)
+                          # Trailing slash is included and not missing.
+                      ;;
+                      *)
+                          # Trailing slash is missing.
+                          # Add trailing slash.
+                          TARGET_DIR=$(echo -n $TARGET_DIR"/" )
+                      ;;
+                 esac
+                 # Exit from Storage Target Device Menu
+                 CHOICE="QUIT"
+              else
+                 # Yes, Cancel or Esc.
+                 TARGET_DIR=""
+                 f_message $1 "NOK" "Invalid $2 directory" "Cancel or Esc pressed, returning to $2 Directory Menu."
+              fi
+           ;;
+      esac
       #
-      TARGET_DIR=""
-      #
-      f_message $1 "OK" "Explanation of trailing slashes" "The TARGET directory name MUST end in a (/) slash to prevent rsync from\ncopying the SOURCE directory as a sub-directory in the TARGET directory."
-      #
-      f_ask_question $1 "Target File Server Name" "Enter name of TARGET file server" $TARGET_SERVER_NAME
-      #
-      # Did the user try to Cancel or Esc?
-      if [ $ERROR -eq 0 ] ; then
-         # No, proceed with rsync process.
-         TARGET_SERVER_NAME=$ANS
-         #
-         f_select_dir $1 "File Server Target Directory" "/media/$TARGET_SERVER_NAME/" 1
-         #
-         # Did the user try to Cancel or Esc?
-         if [ $ERROR -eq 0 ] ; then
-            # No, proceed with rsync process.
-            TARGET_DIR=$ANS
-            #
-            # Add trailing (/) slash if it is missing so that files within $TARGET_DIR are rsynced.
-            # Otherwise the entire directory $TARGET_DIR will be created as a sub-directory of $TARGET_DIR.
-            case $TARGET_DIR in
-                 */)
-                     # Trailing slash is included and not missing.
-                 ;;
-                 *)
-                     # Trailing slash is missing.
-                     # Add trailing slash.
-                     TARGET_DIR=$(echo -n $TARGET_DIR"/" )
-                ;;
-            esac
-         fi
-      fi
-       #
-} # End of function f_any_target
+} # End of function f_source_target_selected.
 #
 # +----------------------------------------+
 # |        Function f_go_nogo_rsync        |
@@ -408,6 +515,8 @@ f_any_target () {
 #          $3 - TARGET_DIR Target directory.
 #          $4 - TIME_FILE includes date stamps of rsync.
 #          $5 - LOG_FILE Log file partial name.
+#          $6 - SOURCE_SERVER_NAME Name of Source file server.
+#          $7 - TARGET_SERVER_NAME Name of Target file server.
 #          ERROR.
 #    Uses: ANS
 # Outputs: None.
@@ -427,45 +536,89 @@ f_go_nogo_rsync () {
       # Do the SOURCE and TARGET directories exist?
       if [ -d $2 ] && [ -d $3 ] ; then
          ERROR=$?
-      fi
-      # Yes, directories exists.
-      if [ $ERROR -eq 0 ] ; then
-         # Rename Log File if desired.
-         f_ask_question $1 "Rsync Log File Name" "Enter file name of rsync log:" "$5"
-         #
-         if [ $ERROR -eq 0 ] && [ -n "$ANS" ] ; then
-            RSYNC_LOG_FILE=$ANS
-         fi
-         #
-         f_yn_question $1 "N" "Confirmation of SOURCE/TARGET" "Synchronization by rsync from SOURCE to TARGET. \n\n From SOURCE directory: \n\"$2\" \n\n   To TARGET directory: \n\"$3\" \n\n       Log file:\n$RSYNC_LOG_FILE\n\nDate stamp file:\n$4\n\nIs this correct? Last chance to abort.\n                 < No > aborts rsync."
-         #
-         if [ $ANS -eq 0 ] ; then
-            # Yes, use selected directories.
+         # Yes, directories exists.
+         if [ $ERROR -eq 0 ] ; then
+            # Rename Log File if desired.
+            f_ask_question $1 "Rsync Log File Name" "Enter file name of rsync log:" "$5"
             #
-            # Does source directory have contents? If it is not mounted, then it will be empty of contents.
-            DIR_SIZE=$(ls --size $2)
-            if [ $DIR_SIZE = "total 0" ] ; then
-               # No, abort and quit.
-               f_message $1 "OK" "!!! Abort rsync !!!" "Source directory is empty. Aborting rsync operation."
-            else
-               # Yes, proceed with rsync.
-               #
-               # Proceed with rsync.
-               f_rsync $1 $2 $3 $4 $RSYNC_LOG_FILE
+            if [ $ERROR -eq 0 ] && [ -n "$ANS" ] ; then
+               RSYNC_LOG_FILE=$ANS
+               f_go_nogo_rsync_2 $1 $2 $3 $4 $5 $6 $7
             fi
             #
-            unset DIR_SIZE
          else
-            # No, bad selection. Null selections. Quit.
-            f_message $1 "OK" "!!! Abort rsync !!!" "Aborting rsync operation."
+            f_message $1 "OK" "Failed Mount" "Cannot synchronize due to mounting problems.\nrsync is aborted."
          fi
-      else
-         f_message $1 "OK" "Failed Mount" "Cannot synchronize due to mounting problems.\nrsync is aborted."
+         #
+         unset ANS RSYNC_LOG_FILE
       fi
       #
-      unset ANS RSYNC_LOG_FILE
-      #
 } # End of function f_go_nogo_rsync
+#
+# +----------------------------------------+
+# |       Function f_go_nogo_rsync_2       |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
+#          $2 - SOURCE_DIR Source directory.
+#          $3 - TARGET_DIR Target directory.
+#          $4 - TIME_FILE includes date stamps of rsync.
+#          $5 - LOG_FILE Log file partial name.
+#          $6 - SOURCE_SERVER_NAME Name of Source file server.
+#          $7 - TARGET_SERVER_NAME Name of Target file server.
+#          ERROR.
+#    Uses: ANS
+# Outputs: None.
+#
+# Summary: Check requirements and parameters before rsync.
+#
+# Dependencies: f_message, f_abort, f_show_mount_points, f_yn_question, f_rsync.
+#
+f_go_nogo_rsync_2 () {
+      #
+      echo "Synchronization by rsync from SOURCE to TARGET." > $TEMP_FILE
+      echo >> $TEMP_FILE
+      echo "From SOURCE directory:" >> $TEMP_FILE
+      echo "$2" >> $TEMP_FILE
+      echo >> $TEMP_FILE
+      echo "To TARGET directory:" >> $TEMP_FILE
+      echo "$3" >> $TEMP_FILE
+      echo >> $TEMP_FILE
+      echo "Log file:" >> $TEMP_FILE
+      echo "$RSYNC_LOG_FILE" >> $TEMP_FILE
+      echo >> $TEMP_FILE
+      echo "Date stamp file:" >> $TEMP_FILE
+      echo "$4" >> $TEMP_FILE
+      echo >> $TEMP_FILE
+      echo "Is this correct? Last chance to abort." >> $TEMP_FILE
+      echo "                 < No > aborts rsync." >> $TEMP_FILE
+      # This was just to make the text prompt more readable than having one long string with "\n" for newline.
+      # I have to write a conversion from text file to a string with newline converted to "\n".
+      #f_yn_question $1 "N" "Confirmation of SOURCE/TARGET" $TEMP_FILE
+      f_yn_question $1 "N" "Confirmation of SOURCE/TARGET" "Synchronization by rsync from SOURCE to TARGET.\n\nFrom SOURCE directory:\n\"$2\" \n\nTo TARGET directory:\n\"$3\" \n\nLog file:\n$RSYNC_LOG_FILE\n\nDate stamp file:\n$4\n\nIs this correct? Last chance to abort.\n< No > aborts rsync."
+      #
+      if [ $ANS -eq 0 ] ; then
+         # Yes, use selected directories.
+         #
+         # Does source directory have contents? If it is not mounted, then it will be empty of contents.
+         DIR_SIZE=$(ls --size "$2")
+         if [ "$DIR_SIZE" = "total 0" ] ; then
+            # No, abort and quit.
+            f_message $1 "OK" "*** Abort rsync ***" "Source directory is empty. Aborting rsync operation."
+         else
+            # Yes, proceed with rsync.
+            #
+            # Proceed with rsync.
+            f_rsync $1 $2 $3 $4 $RSYNC_LOG_FILE $6 $7
+         fi
+         #
+         unset DIR_SIZE
+      else
+         # No, bad selection. Null selections. Quit.
+         f_message $1 "OK" "!!! Abort rsync !!!" "Aborting rsync operation."
+      fi
+      #
+} # End of function f_go_nogo_rsync_2
 #
 # +------------------------------------+
 # |           Function f_rsync         |
@@ -476,6 +629,8 @@ f_go_nogo_rsync () {
 #          $3 - TARGET Target directory.
 #          $4 - TIME_FILE includes date stamps of rsync.
 #          $5 - LOG_FILE Log file partial name.
+#          $6 - SOURCE_SERVER_NAME Name of Source file server.
+#          $7 - TARGET_SERVER_NAME Name of Target file server.
 #          TARGET_FILESYSTEM, THIS_FILE, VERSION.
 #    Uses: X, TIME_FILE.
 # Outputs: None.
@@ -511,7 +666,7 @@ f_rsync () {
          f_message $1 "OK" "Restart Needed" "Re-start this script once the external device is mounted properly\nat the mount-point directory."
       else
          # Source and Target directories validated, use selected directories to rsync.
-         f_rsync2 $1 $2 $3 $4 $5
+         f_rsync2 $1 $2 $3 $4 $5 $6 $7
       fi
       #
       unset X Y
@@ -527,7 +682,9 @@ f_rsync () {
 #          $3 - TARGET Target directory.
 #          $4 - TIME_FILE includes date stamps of rsync.
 #          $5 - LOG_FILE Log file partial name.
-#          TARGET_FILESYSTEM, THIS_FILE, VERSION, SOURCE_SERVER_NAME, TARGET_SERVER_NAME.
+#          $6 - SOURCE_SERVER_NAME Name of Source file server.
+#          $7 - TARGET_SERVER_NAME Name of Target file server.
+#          TARGET_FILESYSTEM, THIS_FILE, VERSION.
 #    Uses: TIME_FILE.
 # Outputs: None.
 #
@@ -537,10 +694,10 @@ f_rsync () {
 #
 f_rsync2 () {
       #
-      f_test_connection $GUI $SOURCE_SERVER_NAME
+      f_test_connection $GUI $6
       #
       if [ $ERROR -eq 0 ] ; then
-         f_test_connection $GUI $TARGET_SERVER_NAME
+         f_test_connection $GUI $7
          #
          if [ $ERROR -eq 0 ] ; then
             #
@@ -549,6 +706,10 @@ f_rsync2 () {
             #
             # Do the actual rsync.
             f_rsync_command $1 $2 $3 $4 $5
+            ERROR=$?
+            if [ $ERROR -ne 0 ] ; then
+               return 1
+            fi
             #
             # Write rsync parameters to file $TIME_FILE.
             echo "Synchronization by rsync from SOURCE to TARGET is complete." >>$4
@@ -669,18 +830,19 @@ f_rsync_command () {
          if [ $ERROR -ne 0 ] ; then
             f_message $1 "OK" "Rsync Error" "The rsync command failed.\nCommand: $ANS"
          fi
+         # Record the end date/time of the backup.
+         # Use printf to put everything on a single line for easy readability.
+         # The echo command inserts <CR><LF> even if using -n switch so unused.
+         #
+         printf "$THIS_FILE finished at: ">>$4;date  +"%A %B %d, %Y -- %T">>$4
+         #
+         # Blank the screen.
+         clear
       else
          f_message $1 "OK" "Rsync command error" "Rsync command was not entered properly in text box."
+         return 1
       fi
       #
-      # Record the end date/time of the backup.
-      # Use printf to put everything on a single line for easy readability.
-      # The echo command inserts <CR><LF> even if using -n switch so unused.
-      #
-      printf "$THIS_FILE finished at: ">>$4;date  +"%A %B %d, %Y -- %T">>$4
-      #
-      # Blank the screen.
-      clear
       #
       # Selected optional parameters from the Manpages "man rsync"
       #

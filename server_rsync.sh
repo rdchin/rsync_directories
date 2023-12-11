@@ -24,7 +24,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2023-11-23 21:49"
+VERSION="2023-12-11 00:33"
 THIS_FILE="$0"
 TEMP_FILE=$THIS_FILE"_temp.txt"
 GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
@@ -161,6 +161,17 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 # +----------------------------------------+
 #
 ## Code Change History
+##
+## 2023-12-11 *f_any_select, f_source_target_selected, f_go_nogo_rsync,
+##             f_go_nogo_rsync_2, f_rsync2, f_rsync_command improved user
+##             messages and improved exit/cancel program flow.
+##
+## 2023-12-01 *f_source_target_selected allowed the selection of a source
+##             or target mount-point and then the selection of a specific
+##             directory under that mount-point.
+##
+## 2023-11-30 *TO-DO f_go_nogo_rsync bug.
+##             /home/robert/server_rsync.lib: line 578: [: too many arguments
 ##
 ## 2023-11-23 *f_any_source, f_any_target changed the default mount points.
 ##
