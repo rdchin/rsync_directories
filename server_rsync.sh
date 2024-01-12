@@ -24,7 +24,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2023-12-11 00:33"
+VERSION="2024-01-05 19:40"
 THIS_FILE="$0"
 TEMP_FILE=$THIS_FILE"_temp.txt"
 GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
@@ -161,6 +161,13 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 # +----------------------------------------+
 #
 ## Code Change History
+##
+## 2024-01-05 *f_go_nogo_rsync deleted question to rename log file.
+##
+## 2024-01-03 *f_any changed names of LOG_FILE and TIME_FILE so there would
+##             not be double-underscores in the names.
+##
+## 2023-12-17 *f_any, f_source_target_selected improved user messages.
 ##
 ## 2023-12-11 *f_any_select, f_source_target_selected, f_go_nogo_rsync,
 ##             f_go_nogo_rsync_2, f_rsync2, f_rsync_command improved user
