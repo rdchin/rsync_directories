@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# ©2023 Copyright 2023 Robert D. Chin
+# ©2024 Copyright 2024 Robert D. Chin
 # Email: RDevChin@Gmail.com
 #
 # Usage: source server_rsync.lib
@@ -74,7 +74,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-01-05 19:40"
+VERSION="2024-01-19 01:49"
 #
 # Commented out THIS_FILE since it will conflict other scripts which
 # use this library.
@@ -312,7 +312,7 @@ f_any_select () {
       TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
       #
       # Get /mnt/ file server mount-points
-      #df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' > $TEMP_FILE"_directory_menu.txt"
+      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' > $TEMP_FILE"_directory_menu.txt"
       #
       # Need to get rid of the forward-slashes in the first column of the  menu items.
       # Replace "/" with "~" in directory names in the first column of the menu items and output first column into temp file1.
@@ -546,14 +546,6 @@ f_go_nogo_rsync () {
          # Yes, directories exists.
          if [ $ERROR -eq 0 ] ; then
             f_go_nogo_rsync_2 "$1" "$2" "$3" "$4" "$5" "$6" "$7"
-            #
-            # Rename Log File if desired.
-            #f_ask_question $1 "Rsync Log File Name" "Enter file name of rsync log:" "$5"
-            #
-            #if [ $ERROR -eq 0 ] && [ -n "$ANS" ] ; then
-            #   RSYNC_LOG_FILE=$ANS
-            #   f_go_nogo_rsync_2 $1 $2 $3 $4 $RSYNC_LOG_FILE $6 $7
-            #fi
             #
          else
             f_message $1 "OK" "Failed Mount" "Cannot synchronize due to mounting problems.\nrsync is aborted."

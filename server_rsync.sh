@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# ©2023 Copyright 2023 Robert D. Chin
+# ©2024 Copyright 2024 Robert D. Chin
 # Email: RDevChin@Gmail.com
 #
 # Usage: bash server_rsync.sh
@@ -24,7 +24,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-01-05 19:40"
+VERSION="2024-01-19 01:49"
 THIS_FILE="$0"
 TEMP_FILE=$THIS_FILE"_temp.txt"
 GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
@@ -162,6 +162,8 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #
 ## Code Change History
 ##
+## 2024-01-19 *Updated copyright notices to 2024.
+##
 ## 2024-01-05 *f_go_nogo_rsync deleted question to rename log file.
 ##
 ## 2024-01-03 *f_any changed names of LOG_FILE and TIME_FILE so there would
@@ -183,7 +185,7 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 ## 2023-11-23 *f_any_source, f_any_target changed the default mount points.
 ##
 ## 2023-11-22 *Main Menu bug fixed that generated script would fail
-##             server_rsync.sh_menu_main_generated.lib: 
+##             server_rsync.sh_menu_main_generated.lib:
 ##             line 49: syntax error.
 ##             `scotty                    "Exit") break  ;;'
 ##
