@@ -23,7 +23,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-01-20 20:13"
+VERSION="2024-02-25 00:34"
 #
 # WARNING: Do not define $THIS_FILE within a library script.
 #
@@ -77,11 +77,33 @@ VERSION="2024-01-20 20:13"
 ##
 ## (After each edit made, please update Code History and VERSION.)
 ##
-## 2024-01-20 *f_check_version_TEMPLATE, f_test_dash update revision date and documentation.
+## 2024-02-25 *f_menu_make added debugging message if menu data is bad.
+##
+## 2024-02-24 *f_display_common_TEMPLATE changed sed options.
+##
+## 2024-02-22 *f_check_version_TEMPLATE now inherits variables rather than
+##             setting SERVER_DIR, MP_DIR, and LOCAL_REPO_DIR so that the
+##             programmer does not have to set these variables in both the
+##             main script and also in f_check_function.
+##            *f_version_compare improved error message to include
+##             instructions on how to resolve the error.
+##            *f_version_compare_2, f_version_compare_3,
+##             f_version_compare_4 added.
+##
+## 2024-02-20 *f_msg_txt_file_ok bug fixed where title was not displayed.
+##
+## 2024-02-16 *f_show_mount_points added passed parameters.
+##            *f_menu_main_all_menus_TEMPLATE improved comments.
+##            *Section "Code Change History" edited comments.
+##
+## 2024-01-20 *f_check_version_TEMPLATE, f_test_dash update revision date
+##             and documentation.
 ##
 ## 2024-01-19 *f_menu_main_all_menus_TEMPLATE added.
-##            *f_menu_main_TEMPLATE_2 deleted in favor of f_menu_main_all_menus_TEMPLATE.
-##            *f_menu_main_all_plus_TEMPLATE deleted in favor of f_menu_main_all_menus_TEMPLATE.
+##            *f_menu_main_TEMPLATE_2 deleted in favor of
+##             f_menu_main_all_menus_TEMPLATE.
+##            *f_menu_main_all_plus_TEMPLATE deleted in favor of
+##             f_menu_main_all_menus_TEMPLATE.
 ##
 ## 2024-01-16 *f_check_version_TEMPLATE, f_version_compare added
 ##             "Silent Mode" parameter and only ask question to update
@@ -171,7 +193,7 @@ VERSION="2024-01-20 20:13"
 ##             the application in the foreground.
 ##
 ## 2022-06-05 *f_msg_ui_file/str_nok/ok added calculations for XSCREEN and
-##             YSCREEN because some scripts may call those functions directly
+##             YSCREEN because scripts may call those functions directly
 ##             without calling f_message which sets XSCREEN and YSCREEN.
 ##
 ## 2022-06-03 *f_update_menu_gui, f_update_menu_txt corrected comments
@@ -187,12 +209,12 @@ VERSION="2024-01-20 20:13"
 ## 2022-05-17 *f_ask_question corrected documentation of ERROR=1 or 255.
 ##             Bug fixed with $3 parameter needing quotes as it could be a
 ##             file name or a string of words.
-##            *f_select_file improved user messages. Bug fixed where if-then
-##             statements test $4 parameter as integer rather than a string.
-##             Changed to display user message "File Entered" only if selecting
-##             multiple files.
-##            *f_select_dir changed to display user message "Directory Entered"
-##             only if selecting multiple directories.
+##            *f_select_file improved user messages. Bug fixed if-then
+##             statements tested $4 parameter as integer instead as string.
+##             Changed to display user message "File Entered" only if
+##             selecting multiple files.
+##            *f_select_dir changed to display user message "Directory
+##              Entered" only if selecting multiple directories.
 ##
 ## 2022-04-29 *Improved comments for passing strings as parameters
 ##             for many functions.
@@ -201,8 +223,8 @@ VERSION="2024-01-20 20:13"
 ## 2022-04-27 *f_select_file bug fixed when $4=1 to select a single file,
 ##             output ANS was not set correctly.
 ##            *f_text_editor bug fixed by deleting the ampersand after the
-##             command so scripts that are dependent on the edited file don't
-##             keep running before edited file is saved.
+##             command so scripts that are dependent on the edited file
+##             do not keep running before edited file is saved.
 ##
 ## 2022-04-24 *f_username changed prompt include more context.
 ##            *f_password changed prompt and delete temporary files
@@ -213,9 +235,9 @@ VERSION="2024-01-20 20:13"
 ##            *f_select_dir improved user messages.
 ##
 ## 2022-04-14 *f_file_manager added instructions on how to exit out of the
-##             CLI applications and changed run command to exit out directly
-##             to men.sh rather than to the invoked bash shell and having to
-##             exit out from that environment also.
+##             CLI applications and changed run command to exit directly
+##             to men.sh rather than to the invoked bash shell and having
+##             to exit out from that environment also.
 ##             Change from: eval $FILE_MGR $2 &
 ##             Change   to: $FILE_MGR $2
 ##             Also made the application Ranger the preferred CLI app and
@@ -227,8 +249,8 @@ VERSION="2024-01-20 20:13"
 ##             XWINDOW environment and use appropriate app.
 ##            *Section "Customize Menu choice options below" deleted
 ##             since it would never work because a menu display would be
-##             dependent on f_display_common which is in each script and
-##             customized for that script based on f_display_common_TEMPLATE.
+##             dependent on f_display_common which is customized for many
+##             scripts based on f_display_common_TEMPLATE.
 ##             Therefore any f_display_common function in this script would
 ##             interfere with the customized version in each parent script.
 ##
@@ -250,7 +272,7 @@ VERSION="2024-01-20 20:13"
 ##
 ## 2022-03-09 *f_file_manager improved user messages.
 ##
-## 2022-03-08 *f_ask_question bug fixed in text UI using wrong variable name.
+## 2022-03-08 *f_ask_question bug fixed in text UI using wrong variable.
 ##            *f_msg_ui_str_ok increase box height calculation.
 ##
 ## 2022-02-27 *f_ask_question bug fixed calculation of box size.
@@ -278,8 +300,8 @@ VERSION="2024-01-20 20:13"
 ##
 ## 2022-01-21 *f_mount added option to specify the default user name.
 ##
-## 2021-06-18 *f_update_menu_txt fixed bug where given two menu option names
-##             of which one included the name of the other, the shorter
+## 2021-06-18 *f_update_menu_txt fixed bug when two menu option names
+##             where one included the name of the other, the shorter
 ##             name would always be selected when typing the name.
 ##             i.e. Menu options: "apple", "apple pie".
 ##             When typing "apple pie" then "apple" would be selected.
@@ -293,7 +315,7 @@ VERSION="2024-01-20 20:13"
 ##             with Linux file manager user-message when copying files.
 ##
 ## 2021-03-28 *f_arguments changed to detect if an argument is a file or
-##             directory name and if not, display appropriate error message.
+##             directory name and if not, show appropriate error message.
 ##            *f_source bug fixed initialized ERROR.
 ##
 ## 2021-03-25 *f_check_version typo fixed.
@@ -325,13 +347,13 @@ VERSION="2024-01-20 20:13"
 ##            *f_download_from_web_site added.
 ##            *Enhanced comments added "Summary" and "Dependencies".
 ##
-## 2021-02-23 *f_version_compare prevented user message from displaying when
-##             a comparison is impossible (repository is unavailable).
+## 2021-02-23 *f_version_compare prevented user message from displaying
+##             when a comparison is impossible (repository is unavailable).
 ##
 ## 2021-02-16 *f_menu_main_TEMPLATE, f_menu_sub_TEMPLATE added Summary.
 ##
 ## 2021-02-14 *f_message fixed bug where temporary file was not deleted.
-##            *f_msg_ui_str_box_size added warning comment to aid debugging.
+##            *f_msg_ui_str_box_size added warning comment for debugging.
 ##
 ## 2021-02-13 *Updated to latest standards.
 ##            *f_update_menu_txt changed menu item text.
@@ -378,10 +400,11 @@ VERSION="2024-01-20 20:13"
 ##            *f_menu_sub_TEMPLATED added.
 ##            *f_check_version_TEMPLATE added comments.
 ##
-## 2020-09-14 *f_version_compare added an error message if repository directory is missing.
+## 2020-09-14 *f_version_compare added an error message if repository
+##             directory is missing.
 ##
-## 2020-09-13 *f_check_version_TEMPLATE, f_version_compare added to compare file versions
-##             of file in LAN Repository and local file.
+## 2020-09-13 *f_check_version_TEMPLATE, f_version_compare added to compare
+##             file versions of file in LAN Repository and local file.
 ##            *f_version deleted, incorporated into f_version_compare.
 ##            *f_mount added.
 ##
@@ -389,39 +412,44 @@ VERSION="2024-01-20 20:13"
 ##
 ## 2020-09-09 *Main (example) display Brief Discription for only 1 second.
 ##
-## 2020-09-07 *f_version added to get version of script from a local repository.
+## 2020-09-07 *f_version added to compare version with local repository.
 ##            *f_download_local_TEMPLATE, f_check_file_TEMPLATE added.
 ##
-## 2020-08-10 *f_yn_defaults bug fixed for text UI when displaying question.
+## 2020-08-10 *f_yn_defaults bug fixed for text UI.
 ##
 ## 2020-08-07 *f_msg_ui_file_nok bug fix for Dialog to exclude "OK" button.
 ##            *f_display_common, f_about, f_code_history, f_help_message
-##             updated to add option to display without an "OK" button in Dialog.
+##             updated to display with/without an "OK" button in Dialog.
 ##             However, Whiptail only displays with an "OK" button.
 ##
 ## 2020-08-06 *f_display_common_TEMPLATE, f_download_library_TEMPLATE,
-##            *f_menu_main_TEMPLATE, f_test_connect_TEMPLATE changed comments
-##             to standize format of template functions.
+##            *f_menu_main_TEMPLATE, f_test_connect_TEMPLATE changed
+##             comments to standize format of template functions.
 ##
-## 2020-07-31 *Main bug fix pattern matching code to download Common BASH Library.
+## 2020-07-31 *Main bug fix pattern matching code to download Common BASH
+##             Library.
 ##
 ## 2020-07-16 *f_update_menu_txt bug fixed due to ommitting comment mark.
-##            *f_test connection added a pause to vary the seconds the message is displayed.
-##            *f_yn_question, f_yn_defaults, f_message, f_msg_ui_file_box_size f_msg_ui_str_box_size,
+##            *f_test connection added a pause to vary the seconds the
+##             message is displayed.
+##            *f_yn_question, f_yn_defaults, f_message,
+##             f_msg_ui_file_box_size, f_msg_ui_str_box_size,
 ##             simplified code inputs needed.
 ##            *f_create_show_menu changed from "." to "source".
-##            *f_update_menu_txt fixed bug where lack of comment marker "#" caused bug.
+##            *f_update_menu_txt fixed bug where lack of comment marker "#"
+##             caused bug.
 ##
 ## 2020-07-01 *f_about, f_display_common_TEMPLATE fixed comments.
 ##
 ## 2020-06-27 *f_display_common, f_about, f_code_history, f_help_message
 ##             rewritten to simplify code.
 ##
-## 2020-06-25 *f_arguments corrected comments to show option for 2 arguments.
-##            *f_update_menu_gui/txt corrected comments and specified directory of library.
+## 2020-06-25 *f_arguments corrected comments.
+##            *f_update_menu_gui/txt corrected comments and specified
+##             directory of library.
 ##
-## 2020-06-23 *Do not declare variables THIS_FILE and TEMP_FILE so when this
-##             library is invoked, these variables are not overwritten.
+## 2020-06-23 *Do not declare variables THIS_FILE and TEMP_FILE so when
+##             this library is invoked, they are not overwritten.
 ##            *f_test_connect_template added, f_test_connect deleted.
 ##            *f_about_template added, f_about deleted.
 ##            *f_code_history_template, f_code_history deleted.
@@ -431,11 +459,13 @@ VERSION="2024-01-20 20:13"
 ##
 ## 2020-06-22 *f_arguments enhanced to allow 1st argument as a directory
 ##             and 2nd argument as UI.
-##            *f_test_dash clean up call to f_abort had 2 OPTIONS instead of 1.
+##            *f_test_dash bug fixed call to f_abort, bad passed parameter.
 ##
 ## 2020-06-04 *f_update_menu/txt/gui cosmetic changes.
-##            *f_message, f_msg_ui_file_nok dialog textbox cannot use sleep n delay.
-##            *f_msg_color bug fixed, cannot use variables in case pattern matching.
+##            *f_message, f_msg_ui_file_nok dialog textbox cannot use
+##             sleep n delay.
+##            *f_msg_color bug fixed, cannot use variables in case pattern
+##             matching.
 ##
 ## 2020-05-23 *f_update_menu_txt/gui fixed bugs/typos.
 ##            *"Help & Usage" added spaces.
@@ -443,7 +473,8 @@ VERSION="2024-01-20 20:13"
 ##            *f_about, f_code_history, f_help_message added DELIM.
 ##
 ## 2020-05-22 *f_message, f_msg_txt_file_nok, f_msg_txt_str_nok,
-##             f_msg_ui_file_nok, f_msg_ui_str_nok added variable sleep seconds.
+##             f_msg_ui_file_nok, f_msg_ui_str_nok added variable sleep
+##             seconds.
 ##
 ## 2020-05-20 *f_update_menu_txt/gui cleaned up comments in generated code.
 ##
@@ -451,26 +482,27 @@ VERSION="2024-01-20 20:13"
 ##            *f_main_menu, f_update_menu_gui, f_menu_arrays fixed bug in
 ##             calculating menu width for displaying on screen.
 ##
-## 2020-05-15 *f_test_connection changed message from "Internet" to "Network".
+## 2020-05-15 *f_test_connection changed title from "Internet" to "Network".
 ##            *f_main_menu, f_create_show_menu, f_update_menu_txt/gui added
 ##             unique TEMP_FILE name to prevent over-writing.
 ##            *f_update_menu_txt/gui changed f_menu_txt/gui to be unique
-##             with each file $GENERATED_FILE so you can have several sub-menus
-##             open simultaneously each with a unique f_menu_txt/gui function names.
+##             with each file $GENERATED_FILE so you can have several
+##             sub-menus open simultaneously each with a unique
+##             f_menu_txt/gui function names.
 ##
 ## 2020-05-14 *f_yn_question fixed bug where temp file was undefined.
 ##            *msg_ui_str_nok, f_msg_txt_str_nok changed wait time
 ##             from 5 to 3 seconds.
-##            *f_exit_script to latest standard; clean-up temp files on exit.
+##            *f_exit_script updated; clean-up temp files on exit.
 ##            *f_message, f_msg_ui_file_box_size, f_msg_ui_str_box_size,
 ##             f_ui_file_ok/nok, f_ui_str_ok/nok f_yn_question/defaults
 ##             specified parameter passing.
 ##            *f_menu_arrays, f_update_menu_txt/gui bug fixed to not unset
 ##             TEMP_FILE variable since it is used globally.
 ##
-## 2020-05-06 *f_msg_ui_file_box_size, f_msg_ui_file_ok bug fixed in display.
+## 2020-05-06 *f_msg_ui_file_box_size, f_msg_ui_file_ok bug fixed display.
 ##
-## 2020-05-04 *f_update_menu_gui adjusted menu display parameters for Whiptail.
+## 2020-05-04 *f_update_menu_gui adjusted Whiptail menu display parameters.
 ##
 ## 2020-05-01 *f_msg_color fixed bug if string had no "\Z" command,
 ##             it would not be displayed.
@@ -481,8 +513,8 @@ VERSION="2024-01-20 20:13"
 ##             simplicity f_msg_(txt/ui)_(file/string)_(ok/nok).
 ##            *f_yn_question split off f_yn_defaults.
 ##
-## 2020-04-19 *Found bug in VERSION setting in f_about, f_code_history,
-##             f_help_message. Need to set $VERSION using correct $THIS_FILE.
+## 2020-04-19 *TO DO fix bug in VERSION setting in f_about, f_code_history,
+##             f_help_message. Set $VERSION using correct $THIS_FILE.
 ##
 ## 2020-04-18 *Fixed bug affecting menu items "About", "Code History",
 ##             and "Help" where f_update menu_gui/txt did not substitute
@@ -505,11 +537,15 @@ VERSION="2024-01-20 20:13"
 # |     Function f_display_common_TEMPLATE      |
 # +------------------------------------+
 #
-#     Rev: 2021-03-31
+#     Rev: 2024-02-24
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - Delimiter of text to be displayed.
-#          $3 - "NOK", "OK", or null [OPTIONAL] to control display of "OK" button.
-#          $4 - Pause $4 seconds [OPTIONAL]. If "NOK" then pause to allow text to be read.
+#          $3 - [OPTIONAL] to control display of prompt to continue.
+#                          null (Default) - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "OK"           - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "NOK"          - No "OK" button or text prompt, display for $3 seconds before continuing automatically.
+#          $4 - [OPTIONAL] to control pause duration. Only used if $3="NOK".
+#                          $4 seconds pause to allow text to be read before continuing automatically.
 #          THIS_DIR, THIS_FILE, VERSION.
 #    Uses: X.
 # Outputs: None.
@@ -558,7 +594,7 @@ f_display_common_TEMPLATE () {
       # Display text (all lines beginning ("^") with $2 but do not print $2).
       # sed substitutes null for $2 at the beginning of each line
       # so it is not printed.
-      sed -n "s/$2//"p $THIS_DIR/$THIS_FILE >> $TEMP_FILE
+      sed --silent "s/$2//p" $THIS_DIR/$THIS_FILE >> $TEMP_FILE
       #
       case $3 in
            "NOK" | "nok")
@@ -575,10 +611,12 @@ f_display_common_TEMPLATE () {
 # |        Function f_check_version_TEMPLATE        |
 # +----------------------------------------+
 #
-#     Rev: 2024-01-16
+#     Rev: 2024-02-22
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - [OPTIONAL] File name to compare.
-#          $3 - [OPTIONAL] 1=Silent mode.
+#          $3 - [OPTIONAL] to control display of messages and interactive user questions.
+#                          null (default) - Display error and status messages and interactive user questions.
+#                          1              - Display error messages only (Silent mode).
 #          FILE_TO_COMPARE.
 #    Uses: SERVER_DIR, MP_DIR, LOCAL_REPO_DIR, $FILE_TO_COMPARE, FILE_LIST,
 #          VERSION, TEMP_FILE, ERROR.
@@ -610,11 +648,15 @@ f_check_version_TEMPLATE () {
       #
       # LAN File Server shared directory.
       # SERVER_DIR="[FILE_SERVER_DIRECTORY_NAME_GOES_HERE]"
-        SERVER_DIR="//file_server/public"
+      if [ -z "$SERVER_DIR" ] ; then
+        SERVER_DIR="//file_server/files"
+      fi
       #
       # Local PC mount-point directory.
       # MP_DIR="[LOCAL_MOUNT-POINT_DIRECTORY_NAME_GOES_HERE]"
-        MP_DIR="/mnt/file_server/public"
+      if [ -z "$MP_DIR" ] ; then
+        MP_DIR="/mnt/file_server/files"
+      fi
       #
       # Local PC mount-point with LAN File Server Local Repository full directory path.
       # Example:
@@ -624,7 +666,9 @@ f_check_version_TEMPLATE () {
       #
       # Local PC mount-point with LAN File Server Local Repository full directory path.
       # LOCAL_REPO_DIR="$MP_DIR/[DIRECTORY_PATH_TO_LOCAL_REPOSITORY]"
-        LOCAL_REPO_DIR="$MP_DIR/scripts/BASH/Repository"
+      if [ -z "$LOCAL_REPO_DIR" ] ; then
+        LOCAL_REPO_DIR="$MP_DIR/Repository"
+      fi
       #
       # Local PC file to be compared.
       if [ $# -eq 2 ] ; then
@@ -669,7 +713,7 @@ f_check_version_TEMPLATE () {
       #echo "[ FILE NAME3 GOES HERE ]" >> $FILE_LIST  # <<<--- INSERT ACTUAL FILE NAME HERE.
       #echo "[ FILE NAME4 GOES HERE ]" >> $FILE_LIST  # <<<--- INSERT ACTUAL FILE NAME HERE.
       #
-      f_version_compare $1 "$SERVER_DIR" "$MP_DIR" "$LOCAL_REPO_DIR" "$FILE_TO_COMPARE" "$VERSION" "$FILE_LIST" $3
+      f_version_compare $1 "$SERVER_DIR" "$MP_DIR" "$LOCAL_REPO_DIR" "$FILE_TO_COMPARE" "$VERSION" "$FILE_LIST" "$3"
       #
       if [ -r  $FILE_LIST ] ; then
          rm  $FILE_LIST
@@ -683,22 +727,23 @@ f_check_version_TEMPLATE () {
 # |       Function f_version_compare       |
 # +----------------------------------------+
 #
-#     Rev: 2024-01-16
+#     Rev: 2024-02-22
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
-#          $2 - Samba File server Directory
-#          $3 - Local Mount Point (Directory)
-#          $4 - File server Target Directory.
+#          $2 - Samba File server Directory ($SERVER_DIR).
+#          $3 - Local Mount Point Directory ($MP_DIR).
+#          $4 - File server Target Directory ($LOCAL_REPO_DIR).
 #          $5 - File server Target File name.
 #          $6 - Version of Local file. String.
 #          $7 - Temporary file name with list of files to be upgraded.
-#          $8 - 1=Silent mode without displaying questions or status.
-#               Display error messages only.
+#          $8 - [OPTIONAL] to control display of messages and interactive user questions.
+#                          null (default) - Display error and status messages and interactive user questions.
+#                          1              - Display error messages only (Silent mode).
 #    Uses: LINE, VER, VER_MSG, VERSION_RELEASE, ERROR2.
 # Outputs: ERROR, ANS.
 #
 # Summary: Compare the version of a single local script against the
 #          version $6 of file $5 in the Local (LAN, non-web) repository
-#          directory $4 .
+#          directory $4.
 #
 # Dependencies: f_message, f_mount, f_yn_question.
 #
@@ -709,132 +754,47 @@ f_version_compare () {
       # Each file script contains the string "VERSION=[ YYYY-MM-DD HH:MM ]"
       # i.e. VERSION="2020-12-31 23:59"
       #
-      # Change string $VER_LOCAL from: VERSION="2020-12-31 23:59"
-      #                            to: 2020-12-31 23:59           (without quotes within string).
-      VER_LOCAL=$(echo $6 | sed 's/VERSION=//' | sed 's/\"//g')
+      # Create $VER_LOCAL from string $6.
+      #              $6 = VERSION="2020-12-31 23:59"
+      #      $VER_LOCAL = 2020-12-31 23:59           (without quotes within string).
+      #
+      VER_LOCAL=$(echo "$6" | sed 's/VERSION=//' | sed 's/\"//g')
+      TEMP_FILE2=$TEMP_FILE"_temp2.txt"
+      ERROR=0
       #
       # Initialize $ANS to "No" answer for f_yn_question "Copy from Repository?"
       ANS=1
       #
       # Does the Local Mount Point directory exist?
-      if [ ! -e "$3" ] ; then
-         # No, directory is missing.
-         f_message $1 "NOK" "Error missing directory" "Missing local mountpoint directory\n$3." 2
-      else
+      if [ -e "$3" ] ; then
          # Yes, directory is OK so mount the file server directory.
-         f_mount $1 $2 $3
-         #
-         # Were there any errors when mounting?
-         if [ $ERROR -eq 0 ] ; then
-            # No, File Server directory is mounted.
-            #
-            if [ -e $4/$5 ] ; then
-               # Get the version number of the target software script.
-               #
-               # Each file script contains the string "VERSION=[ YYYY-MM-DD HH:MM ]"
-               # i.e. VERSION="2020-12-31 23:59"
-               #
-               VER_REPO=$(grep --max-count=1 "VERSION" "$4"/"$5")
-               #
-               # Change string $VERSION_REPO from: VERSION="2020-12-31 23:59"
-               #                               to: 2020-12-31 23:59           (without quotes within string).
-               VER_REPO=$(echo $VER_REPO | sed 's/VERSION=//' | sed 's/\"//g')
-               #
-               VER_MSG=$7"_MSG.txt"
-               #
-               # f_message $1 "OK" "Diagnostic Line common_bash_function.lib 737" "Silent Mode=$8 VER_LOCAL=$VER_LOCAL VER_REPO=$VER_REPO"  # Diagnostic line.
-               #
-               # Is "Silent Mode" deactivated and update needed?
-               if [ -z "$8" ] && [ "$VER_LOCAL" != "$VER_REPO" ]; then
-                  # Yes, display message.
-                  echo "Replace Files on this PC?" > $VER_MSG
-                  echo >> $VER_MSG
-                  echo "***Original Software Version on this PC***" >> $VER_MSG
-                  echo "$VER_LOCAL" >> $VER_MSG
-                  echo >> $VER_MSG
-                  echo "***Replace with***" >> $VER_MSG
-                  echo "$VER_REPO" >> $VER_MSG
-                  echo >> $VER_MSG
-                  echo "Replace files below:" >> $VER_MSG
-                  cat $7 >> $VER_MSG
-                  echo >> $VER_MSG
-                  echo "with files from Local Repository at" >> $VER_MSG
-                  echo "$4" >> $VER_MSG
-                  f_message $1 "OK" "List of Files to be Copied" $VER_MSG
-               fi
-               #
-               # Delete temporary file.
-               if [ -e $VER_MSG ] ; then
-                  rm $VER_MSG
-               fi
-               #
-            else
-               f_message $1 "OK" "Error Missing Local Repository File to compare" "Failed to access file to compare \"$5\" in Local Repository. Cannot compare script versions."
-               ERROR=1
-            fi
-            #
-         else
-            f_message $1 "OK" "Error Mounting Local Repository Directory" "Failed to mount Local Repository Directory \"$4\". Cannot compare script versions."
-         fi
-         #
-         # Is an update needed?
-         if [ $ERROR -eq 0 ] && [ "$VER_LOCAL" != "$VER_REPO" ]; then
-             Is "Silent Mode" activated?
-            if [ -z "$8" ] ; then
-               # "Silent Mode" inactive, display question.
-               f_yn_question $1 "N" "Copy from Repository?" "Original software version on this PC:\n   $VER_LOCAL\n\nReplace with Repository software version:\n   $VER_REPO\n\nand OVERWRITE original files on this PC?"
-            else
-               # "Silent Mode" active, force automatic copy from Repository.
-               ANS=0
-            fi
-            #
-            if [ $ANS -eq 0 ] ; then
-               # Yes, copy from repository.
-               # Update files required for this script.
-               #
-               # Initialize variable.
-               ERROR2=0
-               TEMP_FILE="common_bash_function.lib_temp.txt"
-               while read LINE
-                     do
-                        echo > $TEMP_FILE
-                        echo "Copying File from Local Repository\n$4/$LINE" >> $TEMP_FILE
-                        cp -p "$4"/$LINE . 2>>$TEMP_FILE # Write any error messages to file $TEMP_FILE.
-                        ERROR=$?
-                        #
-                        # Make file executable (useable).
-                        chmod +x $LINE 2>>$TEMP_FILE # Write any error messages to file $TEMP_FILE.
-                        let ERROR=$ERROR+$?
-                        #
-                        if [ $ERROR -ne 0 ] ; then
-                           f_message $1 "OK" "Error Copying File from Local Repository" "$TEMP_FILE"
-                           ERROR2=1
-                        else
-                           f_message $1 "NOK" "Copying File from Local Repository" $TEMP_FILE 2
-                        fi
-                        #
-                       done < $7
-               unset LINE
-               #
-               if [ $ERROR2 -ne 0 ] ; then
-                  f_message $1 "OK" "Error occurred" $TEMP_FILE
-                  ERROR=1
-               else
-                  ERROR=0
-                  # Is "Silent Mode" activated?
-                  if [ -z "$8" ] ; then
-                     # "Silent Mode" inactive, display question.
-                     f_message $1 "NOK" "Successful Update" "Latest version was successfully copied for use.\nScript must be re-started to use the latest version."
-                  fi
-               fi
-            fi
-         else
-            # Is "Silent Mode" activated?
-            if [ -z "$8" ] ; then
-               # "Silent Mode" inactive, display question.
-               f_message $1 "NOK" "Software Not Updated" "Software is at the latest version. No update needed."
-            fi
-         fi
+         f_version_compare_2 "$1" "$2" "$3" "$4" "$5" "$VER_LOCAL" "$7" "$8"
+      else
+         ERROR=1
+         # No, directory is missing.
+         echo "Cannot download the latest version from server directory (LOCAL_REPO_DIR):" > $TEMP_FILE
+         echo "$4" >> $TEMP_FILE
+         echo "which should be mounted on this PC at mount-point directory (MP_DIR):" >> $TEMP_FILE
+         echo "$3" >> $TEMP_FILE
+         echo >> $TEMP_FILE
+         echo "To resolve this issue:" >> $TEMP_FILE
+         echo "1. The mount-point directory (MP_DIR) needs to be created with the command:" >> $TEMP_FILE
+         echo "   sudo mkdir -p $3" >> $TEMP_FILE
+         echo "   (or whatever directory you choose to create)." >> $TEMP_FILE
+         echo "2. After creating the mount-point directory (MP_DIR), you need to change" >> $TEMP_FILE
+         echo "   the variables SERVER_DIR, MP_DIR, LOCAL_REPO_DIR" >> $TEMP_FILE
+         echo "   in this script and in f_check_version." >> $TEMP_FILE
+         echo "3. When this script is re-started, it will automatically mount" >> $TEMP_FILE
+         echo "   the file server share-point (SERVER_DIR):" >> $TEMP_FILE
+         echo "   $2" >> $TEMP_FILE
+         echo "   onto the local mount-point directory (MP_DIR):" >> $TEMP_FILE
+         echo "   $3" >> $TEMP_FILE
+         f_message $1 "OK" "Missing mount-point directory on this PC" $TEMP_FILE
+      fi
+      #
+      # Delete temporary file.
+      if [ -e $TEMP_FILE2 ] ; then
+         rm $TEMP_FILE2
       fi
       #
       unset LINE VER VER_MSG VERSION_RELEASE ERROR2
@@ -842,10 +802,263 @@ f_version_compare () {
 }  # End of function f_version_compare.
 #
 # +----------------------------------------+
+# |      Function f_version_compare_2      |
+# +----------------------------------------+
+#
+#     Rev: 2024-02-22
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
+#          $2 - Samba File server Directory ($SERVER_DIR).
+#          $3 - Local Mount Point Directory ($MP_DIR).
+#          $4 - File server Target Directory ($LOCAL_REPO_DIR).
+#          $5 - File server Target File name.
+#          $6 - Version of Local file. String.
+#          $7 - Temporary file name with list of files to be upgraded.
+#          $8 - [OPTIONAL] to control display of messages and interactive user questions.
+#                          null (default) - Display error and status messages and interactive user questions.
+#                          1              - Display error messages only (Silent mode).
+#    Uses: LINE, VER, VER_MSG, VERSION_RELEASE, ERROR2.
+# Outputs: ERROR, ANS.
+#
+# Summary: Called by function f_version_compare after the mount-point
+#          directory (MP_DIR) is confirmed to exist.
+#          Try mounting MP_DIR and if sucessful, then call function
+#          f_version_compare_3 and f_version_compare_4.
+#
+# Dependencies: f_message, f_mount, f_yn_question.
+#
+f_version_compare_2 () {
+      #
+      # Yes, directory is OK so mount the file server directory.
+      #f_mount $1 $2 $3
+      #
+      # Were there any errors when mounting?
+      if [ $ERROR -eq 0 ] ; then
+         # Mounting OK, file server directory is mounted.
+         #
+         # Is the Repository directory correctly specified?
+         f_version_compare_3 "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
+         #
+      else
+         # Yes, errors mounting file server directory.
+         ERROR=1
+         f_message $1 "OK" "Error Mounting Local Repository Directory" "Failed to mount Local Repository Directory \"$4\". Cannot compare script versions."
+         #
+         echo "Cannot download the latest version from server directory (LOCAL_REPO_DIR):" > $TEMP_FILE
+         echo "$4" >> $TEMP_FILE
+         echo "which should be mounted on this PC at mount-point directory (MP_DIR):" >> $TEMP_FILE
+         echo "$3" >> $TEMP_FILE
+         echo >> $TEMP_FILE
+         echo "To resolve this issue:" >> $TEMP_FILE
+         echo "1. Make sure that the mount-point directory (MP_DIR) exists:" >> $TEMP_FILE
+         echo "   $3" >> $TEMP_FILE
+         echo "   (or whatever directory you choose to create)." >> $TEMP_FILE
+         echo "2. After creating the mount-point directory (MP_DIR), you need to change" >> $TEMP_FILE
+         echo "   the variables SERVER_DIR, MP_DIR, LOCAL_REPO_DIR" >> $TEMP_FILE
+         echo "   in this script and in f_check_version." >> $TEMP_FILE
+         echo "3. When this script is re-started, it will automatically mount" >> $TEMP_FILE
+         echo "   the file server share-point (SERVER_DIR):" >> $TEMP_FILE
+         echo "   $2" >> $TEMP_FILE
+         echo "   onto the local mount-point directory (MP_DIR):" >> $TEMP_FILE
+         echo "   $3" >> $TEMP_FILE
+         f_message $1 "OK" "Error getting latest version" $TEMP_FILE
+      fi
+         #
+         # Is an update needed?
+      if [ $ERROR -eq 0 ] && [ "$VER_LOCAL" != "$VER_REPO" ]; then
+         # Yes, versions do not match.
+         # Is "Silent Mode" activated?
+         if [ "$8"  != "1" ] ; then
+            # "Silent Mode" inactive, display question.
+            f_yn_question $1 "N" "Copy from Repository?" "Original software version on this PC:\n   $VER_LOCAL\n\nReplace with Repository software version:\n   $VER_REPO\n\nand OVERWRITE original files on this PC?"
+         else
+            # "Silent Mode" active, force automatic copy from Repository.
+            ANS=0
+         fi
+         #
+         if [ $ANS -eq 0 ] ; then
+            # Yes, copy from repository.
+            # Update files required for this script.
+            #
+            f_version_compare_4 "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
+            #
+            if [ $ERROR2 -ne 0 ] ; then
+               f_message $1 "OK" "Error occurred" $TEMP_FILE2
+               ERROR=1
+            else
+               ERROR=0
+               # Is "Silent Mode" activated?
+               if [ "$8"  != "1" ] ; then
+                  # "Silent Mode" inactive, display question.
+                  f_message $1 "NOK" "Successful Update" "Latest version was successfully copied for use.\nScript must be re-started to use the latest version."
+               fi
+            fi
+         fi
+      else
+         # If no mounting error and versions match and "Silent Mode" not activated
+         if [ $ERROR -eq 0 ] && [ "$8"  != "1" ] ; then
+            # "Silent Mode" inactive, display messaoge.
+            f_message $1 "NOK" "Software Not Updated" "Software is at the latest version. No update needed."
+         fi
+      fi
+      #
+}  # End of function f_version_compare_2.
+#
+# +----------------------------------------+
+# |      Function f_version_compare_3      |
+# +----------------------------------------+
+#
+#     Rev: 2024-02-22
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
+#          $2 - Samba File server Directory ($SERVER_DIR).
+#          $3 - Local Mount Point Directory ($MP_DIR).
+#          $4 - File server Target Directory ($LOCAL_REPO_DIR).
+#          $5 - File server Target File name.
+#          $6 - Version of Local file. String.
+#          $7 - Temporary file name with list of files to be upgraded.
+#          $8 - [OPTIONAL] to control display of messages and interactive user questions.
+#                          null (default) - Display error and status messages and interactive user questions.
+#                          1              - Display error messages only (Silent mode).
+#    Uses: LINE, VER, VER_MSG, VERSION_RELEASE, ERROR2.
+# Outputs: ERROR, ANS.
+#
+# Summary: Called by function f_version_compare_2 after successfully mounting
+#          MP_DIR. Now confirm that the Repository directory is correctly
+#          specified.
+#
+# Dependencies: f_message, f_mount, f_yn_question.
+#
+f_version_compare_3 () {
+      #
+      # Is the Repository directory correctly specified?
+      if [ -e $4/$5 ] ; then
+         # Yes, Repository is available.
+         # Get the version number of the target software script.
+         #
+         # Each file script contains the string "VERSION=[ YYYY-MM-DD HH:MM ]"
+         # i.e. VERSION="2020-12-31 23:59"
+         #
+         VER_REPO=$(grep --max-count=1 "VERSION" "$4"/"$5")
+         #
+         # Change string $VERSION_REPO from: VERSION="2020-12-31 23:59"
+         #                               to: 2020-12-31 23:59           (without quotes within string).
+         VER_REPO=$(echo $VER_REPO | sed 's/VERSION=//' | sed 's/\"//g')
+         #
+         VER_MSG=$7"_f_version_compare_3.txt"
+         #
+         # Is "Silent Mode" deactivated and update needed?
+         if [ "$8"  != "1" ] && [ "$VER_LOCAL" != "$VER_REPO" ]; then
+            # Yes, display message.
+            echo "Replace Files on this PC?" > $VER_MSG
+            echo >> $VER_MSG
+            echo "***Original Software Version on this PC***" >> $VER_MSG
+            echo "$VER_LOCAL" >> $VER_MSG
+            echo >> $VER_MSG
+            echo "***Replace with***" >> $VER_MSG
+            echo "$VER_REPO" >> $VER_MSG
+            echo >> $VER_MSG
+            echo "Replace files below:" >> $VER_MSG
+            cat $7 >> $VER_MSG
+            echo >> $VER_MSG
+            echo "with files from Local Repository at" >> $VER_MSG
+            echo "$4" >> $VER_MSG
+            f_message $1 "OK" "List of Files to be Copied" $VER_MSG
+         fi
+         #
+         # Delete temporary file.
+         if [ -e $VER_MSG ] ; then
+            rm $VER_MSG
+         fi
+      else
+         # No, Repository is incorrectly specified or is unavailable.
+         ERROR=1
+         f_message $1 "OK" "Error Missing Local Repository File to compare" "Failed to access file to compare \"$5\" in Local Repository. Cannot compare script versions."
+         #
+         echo "Cannot download the latest version from server directory (LOCAL_REPO_DIR):" > $TEMP_FILE
+         echo "$4" >> $TEMP_FILE
+         echo "which should be mounted on this PC at mount-point directory (MP_DIR):" >> $TEMP_FILE
+         echo "$3" >> $TEMP_FILE
+         echo >> $TEMP_FILE
+         echo "To resolve this issue:" >> $TEMP_FILE
+         echo "1. Make sure that the mount-point directory (MP_DIR) exists:" >> $TEMP_FILE
+         echo "   $3" >> $TEMP_FILE
+         echo "   (or whatever directory you choose to create)." >> $TEMP_FILE
+         echo "2. After creating the mount-point directory (MP_DIR), you need to change" >> $TEMP_FILE
+         echo "   the variables SERVER_DIR, MP_DIR, LOCAL_REPO_DIR" >> $TEMP_FILE
+         echo "   in this script and in f_check_version." >> $TEMP_FILE
+         echo "3. When this script is re-started, it will automatically mount" >> $TEMP_FILE
+         echo "   the file server share-point (SERVER_DIR):" >> $TEMP_FILE
+         echo "   $2" >> $TEMP_FILE
+         echo "   onto the local mount-point directory (MP_DIR):" >> $TEMP_FILE
+         echo "   $3" >> $TEMP_FILE
+         f_message $1 "OK" "Error getting latest version" $TEMP_FILE
+      fi
+      #
+}  # End of function f_version_compare_3.
+#
+# +----------------------------------------+
+# |      Function f_version_compare_4      |
+# +----------------------------------------+
+#
+#     Rev: 2024-02-22
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
+#          $2 - Samba File server Directory ($SERVER_DIR).
+#          $3 - Local Mount Point Directory ($MP_DIR).
+#          $4 - File server Target Directory ($LOCAL_REPO_DIR).
+#          $5 - File server Target File name.
+#          $6 - Version of Local file. String.
+#          $7 - Temporary file name with list of files to be upgraded.
+#          $8 - [OPTIONAL] to control display of messages and interactive user questions.
+#                          null (default) - Display error and status messages and interactive user questions.
+#                          1              - Display error messages only (Silent mode).
+#    Uses: LINE, VER, VER_MSG, VERSION_RELEASE, ERROR2.
+# Outputs: ERROR, ANS.
+#
+# Summary: Compare the version of a single local script against the
+#          version $6 of file $5 in the Local (LAN, non-web) repository
+#          directory $4 .
+#
+# Dependencies: f_message, f_mount, f_yn_question.
+#
+f_version_compare_4 () {
+      #
+      # Initialize variable.
+      ERROR2=0
+      while read LINE
+            do
+               echo > $TEMP_FILE
+               #
+               # Is "Silent Mode" activated?
+               if [ "$8"  != "1" ] ; then
+                  # "Silent Mode" inactive, display message.
+                  echo "Copying File from Local Repository\n$4/$LINE" >> $TEMP_FILE
+               fi
+               cp -p "$4"/$LINE . 2>>$TEMP_FILE # Write any error messages to file $TEMP_FILE.
+               ERROR=$?
+               # Make file executable (useable).
+               chmod +x $LINE 2>>$TEMP_FILE # Write any error messages to file $TEMP_FILE.
+               let ERROR=$ERROR+$?
+               #
+               if [ $ERROR -ne 0 ] ; then
+                  cp $TEMP_FILE $TEMP_FILE2
+                  f_message $1 "OK" "Error Copying File from Local Repository" "$TEMP_FILE"
+                  ERROR2=1
+               else
+                  #  "Silent Mode" activated?
+                  if [ "$8"  != "1" ] ; then
+                     # "Silent Mode" inactive, display message.
+                     f_message $1 "NOK" "Copying File from Local Repository" $TEMP_FILE
+                  fi
+               fi
+            done < $7
+      unset LINE
+      #
+}  # End of function f_version_compare_4.
+#
+# +----------------------------------------+
 # |         Function f_script_path         |
 # +----------------------------------------+
 #
-#     Rev: 2020-03-07
+#     Rev: 2024-02-23
 #  Inputs: $BASH_SOURCE (System variable).
 #    Uses: None.
 # Outputs: SCRIPT_PATH, THIS_DIR.
@@ -874,6 +1087,7 @@ f_script_path () {
 #
 #     Rev: 2021-03-28
 #  Inputs: $1 - Argument
+#             [Directory Name] or [File Name]
 #             [ --help ] [ -? ]
 #             [ --about ]
 #             [ --version ] [ --ver ] [ -v ] [--about ]
@@ -883,7 +1097,7 @@ f_script_path () {
 #          $2=Argument
 #             [] [ text ] [ dialog ] [ whiptail ]
 #    Uses: None.
-# Outputs: GUI, ERROR.
+# Outputs: GUI, ERROR, TARGET_DIR, TARGET_FILE.
 #
 # Summary: Validate and process provided arguments.
 #
@@ -1442,8 +1656,12 @@ f_abort () {
 #
 #     Rev: 2021-03-07
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
-#          $2 - "NOK", "OK", or null [OPTIONAL] to control display of "OK" button.
-#          $3 - Pause $3 seconds [OPTIONAL]. If "NOK" then pause to allow text to be read.
+#          $2 - [OPTIONAL] to control display of prompt to continue.
+#                          null (Default) - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "OK"           - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "NOK"          - No "OK" button or text prompt, display for $3 seconds before continuing automatically.
+#          $3 - [OPTIONAL] to control pause duration. Only used if $2="NOK".
+#                          $3 seconds pause to allow text to be read before continuing automatically.
 #          THIS_DIR, THIS_FILE, VERSION.
 #    Uses: DELIM.
 # Outputs: None.
@@ -1469,8 +1687,12 @@ f_about () {
 #
 #     Rev: 2021-03-07
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
-#          $2 - "NOK", "OK", or null [OPTIONAL] to control display of "OK" button.
-#          $3 - Pause $3 seconds [OPTIONAL]. If "NOK" then pause to allow text to be read.
+#          $2 - [OPTIONAL] to control display of prompt to continue.
+#                          null (Default) - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "OK"           - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "NOK"          - No "OK" button or text prompt, display for $3 seconds before continuing automatically.
+#          $3 - [OPTIONAL] to control pause duration. Only used if $2="NOK".
+#                          $3 seconds pause to allow text to be read before continuing automatically.
 #          THIS_DIR, THIS_FILE, VERSION.
 #    Uses: DELIM.
 # Outputs: None.
@@ -1496,8 +1718,12 @@ f_code_history () {
 #
 #     Rev: 2021-03-07
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
-#          $2 - "NOK", "OK", or null [OPTIONAL] to control display of "OK" button.
-#          $3 - Pause $3 seconds [OPTIONAL]. If "NOK" then pause to allow text to be read.
+#          $2 - [OPTIONAL] to control display of prompt to continue.
+#                          null (Default) - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "OK"           - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "NOK"          - No "OK" button or text prompt, display for $3 seconds before continuing automatically.
+#          $3 - [OPTIONAL] to control pause duration. Only used if $2="NOK".
+#                          $3 seconds pause to allow text to be read before continuing automatically.
 #          THIS_DIR, THIS_FILE, VERSION.
 #    Uses: DELIM.
 # Outputs: None.
@@ -1522,6 +1748,12 @@ f_help_message () {
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
+#          $2 - [OPTIONAL] to control display of prompt to continue.
+#                          null (Default) - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "OK"           - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "NOK"          - No "OK" button or text prompt, display for $3 seconds before continuing automatically.
+#          $3 - [OPTIONAL] to control pause duration. Only used if $2="NOK".
+#                          $3 seconds pause to allow text to be read before continuing automatically.
 #          $THIS_FILE,
 #    Uses: X, Y, ERROR, $TEMP_FILE.
 # Outputs: None.
@@ -1654,7 +1886,14 @@ f_show_mount_points () {
       lsblk -fs --tree --output NAME,SIZE,FSUSED,FSUSE%,FSAVAIL,FSTYPE,MOUNTPOINT | grep -e sd[a-z][1-9] -e md | awk  '{ printf "%-7s %-6s %-8s %-6s %-8s %-8s %s\n", $1,$2,$3,$4,$5,$6,$7 }' >>$TEMP_FILE
       #
       # Display results.
-      f_message $1 "OK" "(use arrow keys to scroll up/down/side-ways)" $TEMP_FILE
+      case $2 in
+           "NOK" | "nok")
+             f_message $1 "NOK" "(use arrow keys to scroll up/down/side-ways)" $TEMP_FILE "$3"
+             ;;
+           *)
+             f_message $1 "OK" "(use arrow keys to scroll up/down/side-ways)" $TEMP_FILE "$3"
+             ;;
+      esac
       #
       # Delete temporary file.
       if [ -r $TEMP_FILE ] ; then
@@ -1675,9 +1914,10 @@ f_show_mount_points () {
 #          $2 - TARGET_DIR.
 #                  (String must either begin and end with double-quotes
 #                  or must not include spaces but must have underscores substituting for spaces).
-#          $3 - [Optional] Foreground/Background process flag.
-#               1 or null - Run file manager as a foreground process.
-#               2 - Run file manager as a Background process.
+#          $3 - [OPTIONAL] Foreground/Background process flag.
+#                          null (Default) - Run file manager as a foreground process.
+#                          1              - Run file manager as a foreground process.
+#                          2              - Run file manager as a Background process.
 #    Uses: FILE_MGR FILE_MGR_APPS.
 # Outputs: ERROR, RUNAPP.
 #
@@ -1804,10 +2044,11 @@ f_file_manager () {
 #                  (String must either begin and end with double-quotes
 #                  or must have underscores substituting for spaces).
 #          $3 - Default directory.
-#          $4 - [Optional] File name.
-#          $5 - [Optional] Foreground/Background process flag.
-#               1 or null - Run file manager as a foreground process.
-#               2 - Run file manager as a Background process.
+#          $4 - [OPTIONAL] File name.
+#          $5 - [OPTIONAL] Foreground/Background process flag.
+#                          null (Default) - Run file manager as a foreground process.
+#                          1              - Run file manager as a foreground process.
+#                          2              - Run file manager as a Background process.
 #          THIS_DIR, THIS_FILE.
 #    Uses: RUNAPP
 # Outputs: ERROR.
@@ -2033,8 +2274,10 @@ f_web_browser () {
 #                  or must have underscores substituting for spaces).
 #                  !!! String cannot be longer than 28 characters !!!
 #          $3 - Default parent directory.
-#          $4 - [Optional] 1/0 1=Select only one directory
-#                            0 or null=Select multiple directories.
+#          $4 - [OPTIONAL] to select one or more directories.
+#                          null (Default) - Select multiple directories.
+#                          0              - Select multiple directories.
+#                          1              - Select only one directory.
 #          THIS_DIR.
 #    Uses: TEMP_FILE2, ANS, ERROR, SCRIPT_LIST.
 # Outputs: ANS (List of selected directories delimited by spaces)
@@ -2287,8 +2530,10 @@ f_select_dir () {
 #                  or must have underscores substituting for spaces).
 #                  !!! String cannot be longer than 28 characters !!!
 #          $3 - Original Default directory.
-#          $4 - [Optional] 1/0 1=Select only one directory
-#                            0 or null=Select multiple directories.
+#          $4 - [OPTIONAL] to select one or more directories.
+#                          null (Default) - Select multiple directories.
+#                          0              - Select multiple directories.
+#                          1              - Select only one directory.
 #          THIS_DIR.
 #    Uses: None.
 # Outputs: TEMP_FILE2 (List of selected directories delimited by spaces)
@@ -2354,9 +2599,12 @@ f_select_dir_fzf () {
 #                  !!! String cannot be longer than 28 characters !!!
 #          $3 - Selected directory.
 #          $4 - Original Default directory.
-#          $5 - [Optional] 1/0 1=Select only one directory
-#                            0 or null=Select multiple directories.
+#          $5 - [OPTIONAL] to select one or more directories.
+#                          null (Default) - Select multiple directories.
+#                          0              - Select multiple directories.
+#                          1              - Select only one directory.
 #          THIS_DIR.
+#          TEMP_FILE2 - Temporary file needs to be defined beforehand.
 #    Uses: None.
 # Outputs: TEMP_FILE2 - Temporary file contains a list of file names.
 #                       Example: cat $TEMP_FILE2
@@ -2499,8 +2747,10 @@ f_select_dir_verify () {
 #                  or must have underscores substituting for spaces).
 #                  !!! String cannot be longer than 28 characters !!!
 #          $3 - Default directory or Default directory/file name.
-#          $4 - [Optional] 1/0 1=Select only one file
-#                              0 or null=Select multiple files.
+#          $4 - [OPTIONAL] to select one or more files.
+#                          null (Default) - Select multiple files.
+#                          0              - Select multiple files.
+#                          1              - Select only one file.
 #          THIS_DIR, THIS_FILE.
 #    Uses: TEMP_FILE, ANS, ERROR, SCRIPT_LIST.
 # Outputs: ANS (List of selected files delimited by spaces: "DIR1/FILE1 DIR2/FILE2 DIR3/FILE3...")
@@ -2743,9 +2993,10 @@ f_select_file () {
 #                  !!! String cannot be longer than 28 characters !!!
 #          $3 - Default directory or Default directory/file name.
 #          $4 - FILE_SELECTED File selected by user entry.
-#          $5 - [Optional] 1/0 1=Select only one file
-#                              0 or null=Select multiple files.
-#
+#          $5 - [OPTIONAL] to select one or more files.
+#                          null (Default) - Select multiple files.
+#                          0              - Select multiple files.
+#                          1              - Select only one file.
 #          THIS_DIR, THIS_FILE.
 #    Uses: FILE_DESCR, DEFAULT_DIR, FILE_SELECTED, ANS, ERROR.
 # Outputs: TEMP_FILE2 - Temporary file contains a list of file names.
@@ -2836,8 +3087,10 @@ f_select_file_verify () {
 #                                       DIR1/FILE1
 #                                       DIR2/FILE2
 #                                       DIR3/FILE3
-#          $5 - [Optional] 1/0 1=Select only one file
-#                              0 or null=Select multiple files.
+#          $5 - [OPTIONAL] to select one or more files.
+#                          null (Default) - Select multiple files.
+#                          0              - Select multiple files.
+#                          1              - Select only one file.
 #
 #          THIS_DIR, THIS_FILE.
 #    Uses: TEMP_FILE2, TEMP_FILE3.
@@ -3000,9 +3253,9 @@ f_choose_files () {
 #          $3 - Question text string or text file.
 #                  (String must either begin and end with double-quotes
 #                  or must have underscores substituting for spaces).
-#          $4 - [Optional] Default answer - Default answer string.
-#                  (String must either begin and end with double-quotes
-#                  or must have underscores substituting for spaces).
+#          $4 - [OPTIONAL] Default answer - Default answer string.
+#                          (String must either begin and end with double-quotes
+#                          or must have underscores substituting for spaces).
 #    Uses: None.
 # Outputs: ANS=String.
 #          ERROR=1 "Exit" or "Cancel" button pressed in Dialog or Whiptail.
@@ -4290,7 +4543,7 @@ f_msg_txt_str_nok () {
 # |  Function f_msg_txt_file_ok  |
 # +------------------------------+
 #
-#     Rev: 2021-03-07
+#     Rev: 2024-02-20
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - "OK"  [OK] button at end of text.
 #               "NOK" No [OK] button or "Press Enter key to continue"
@@ -4311,10 +4564,14 @@ f_msg_txt_file_ok () {
       # If $2 is "OK" then use command "less".
       #
       clear  # Blank the screen.
+      echo $3 > $TEMP_FILE"_2.txt"
+      echo >> $TEMP_FILE"_2.txt"
+      cat $4 >> $TEMP_FILE"_2.txt"
       #
       # Display text file contents.
-      less -P '%P\% (Spacebar, PgUp/PgDn, Up/Dn arrows, press q to quit)' $4
+      less -P '%P\% (Spacebar, PgUp/PgDn, Up/Dn arrows, press q to quit)' $TEMP_FILE"_2.txt"
       #
+      rm $TEMP_FILE"_2.txt"
       clear  # Blank the screen.
       #
 }  # End of function f_msg_txt_file_ok
@@ -4747,7 +5004,6 @@ f_update_menu_gui () {
            ;;
       esac
       #
-      #TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
       TEMP_FILE=$6
       ARRAY_NAME="CHOICE"
       ARRAY_LEN=$(eval "echo \$\{#$ARRAY_NAME[@]\}")
@@ -4798,7 +5054,7 @@ f_update_menu_gui () {
 # | Function f_menu_main_all_menus_TEMPLATE          |
 # +-----------------------------------------+
 #
-#     Rev: 2024-01-19
+#     Rev: 2024-02-18
 #  Inputs: $1 - "text", "dialog" or "whiptail" the preferred user-interface.
 #          $2 - MENU_TITLE Title of menu which must also match the header
 #               and tail strings for the menu data in the ARRAY_SOURCE_FILE.
@@ -4810,10 +5066,10 @@ f_update_menu_gui () {
 #
 # Summary: Display any menu. Use this same function to display
 #          both Main-Menu and any sub-menus. The Main Menu and all sub-menu data
-#          are in a separte library file from the run-time script or program.
-#          A single library file contains data for multiple menus (many menus/1 library file),
-#          In this scheme, multiple menu data is in the library file,
-#          which may also contain various functions in addition to the menu data.
+#          may either be in the run-time script (*.sh) or a separate library (*.lib)
+#
+#          A single script/library file contains data for multiple menus
+#          where there may be 1 or more menus within 1 file.
 #
 #          Simply state the Path/Filename of the library file, ARRAY_SOURCE_FILE
 #          which contains the menu data.
@@ -4862,47 +5118,36 @@ f_menu_main_all_menus_TEMPLATE () {
       #
       # The MENU_TITLE must match the strings in the ARRAY_SOURCE_FILE.
       #
-      #       The run-time script file, "ice_cream.sh" may also contain the data
-      #       for both Main menu and sub-menus if it follows the same format below.
-      #
-      #       If you have a lot of menus, you may want to have all the menu data
-      #       in a separate library file.
-      #
-      #       Example:
-      #
-      #       The file "all_ice_cream_menus.lib" contains the data for both
-      #       Main menu: "Tasty Ice Cream Menu"
-      #        Sub-menu: "Ice Cream Toppings Menu".
-      #
-      #  Each menu (Main Menu and sub-menus) must have Header and Tail strings.
-      #  Main menu header/tail strings:
-      #  Header string: "Start Listing Tasty Ice Cream Menu" (with spaces " ")
-      #    Tail string: "End Listing Tasty Ice Cream Menu"
-      #
-      #  Sub-menu header/tail strings:
-      #  Header string: "Start Listing Ice Cream Toppings Menu"
-      #    Tail string: "End Listing Ice Cream Toppings Menu"
-      #
-      #
       #  Example:
+      #   The run-time script file, "ice_cream.sh" may also contain the data
+      #   for both Main menu and sub-menus.
       #
-      #  ARRAY_SOURCE_FILE="All_Ice_Cream_Menus.lib"
+      #     MENU_TITLE="All_Ice_Cream_Menu"
+      #     ARRAY_SOURCE_FILE="ice_cream.sh"
       #
-      #  Listing of $ARRAY_SOURCE_FILE (All_Ice_Cream_Menus.lib)
+      #   If you have a lot of menus, you may want to have all the menu data
+      #   for both Main menu and sub-menus in a separate library file,
+      #   "all_ice_cream_menus.lib".
+      #
+      #     MENU_TITLE="All_Ice_Cream_Menu"
+      #     ARRAY_SOURCE_FILE="all_ice_cream_menus.lib"
+      #
+      # Format for $ARRAY_SOURCE_FILE: ("ice_cream.sh" or "all_ice_cream_menus.lib")
+      #
+      #  Listing of $ARRAY_SOURCE_FILE ("ice_cream.sh" or "all_ice_cream_menus.lib")
       #          which includes menu item data:
       #
       #  Start Listing Tasty Ice Cream Menu (Required header, do not delete).
       #      Data for Menu item 1
       #      Data for Menu item 2
       #      Data for Menu item 3
-      #  End  Listing Tasty Ice Cream Menu (Required line, do not delete).
+      #  End Listing Tasty Ice Cream Menu (Required line, do not delete).
       #
       #  Start Listing Ice Cream Toppings Menu (Required header, do not delete).
       #      Data for Menu item 1
       #      Data for Menu item 2
       #      Data for Menu item 3
       #  End Listing Ice Cream Toppings Menu (Required line, do not delete).
-      #
       #
       TEMP_FILE=$THIS_DIR/$THIS_FILE"_menu_temp.txt"
       #
@@ -5059,12 +5304,14 @@ f_menu_main_TEMPLATE () {
 # |         Function f_create_a_menu       |
 # +----------------------------------------+
 #
-#     Rev: 2022-05-07
+#     Rev: 2024-02-18
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - GENERATED_FILE (The name of a temporary library file containing the suggested phrase "generated.lib" which contains the code to display the sub-menu).
 #          $3 - MENU_TITLE (Title of the sub-menu)
 #          $4 - TEMP_FILE (Temporary file).
 #          $5 - ARRAY_TEMP_FILE (Temporary file) includes menu items imported from $ARRAY_SOURCE_FILE of a single menu.
+#               Menu items in $ARRAY_TEMP_FILE and $ARRAY_SOURCE_FILE are $delimited by "#@@".
+#               The menu items are copied from the $ARRAY_SOURCE_FILE into the $ARRAY_TEMP_FILE since the $ARRAY_SOURCE_FILE also contains run-time functions and code.
 #          $6 - ARRAY_SOURCE_FILE (Not a temporay file) includes menu items from multiple menus.
 #    Uses: None.
 # Outputs: None.
@@ -5073,47 +5320,42 @@ f_menu_main_TEMPLATE () {
 #          So rather than having a separate file for the data of each menu, this allows you to have data for multiple menus in a single file.
 #          This may replace f_menu_sub_TEMPLATE.
 #
-#       The run-time script file, "ice_cream.sh" may also contain the data
-#       for both Main menu and sub-menus if it follows the same format below.
-#
-#       If you have a lot of menus, you may want to have all the menu data
-#       in a separate library file.
-#
-#       Example:
-#       The file "All_Ice_Cream_Menus.lib" contains the data for both
-#       Main menu: "Tasty Ice Cream Menu"
-#        Sub-menu: "Ice Cream Toppings Menu".
-#
-#       Each menu (Main Menu and sub-menus) must have Header and Tail strings.
-#       Main menu header/tail strings:
-#       Header string: "Start Listing Tasty Ice Cream Menu" (with spaces " ")
-#         Tail string: "End Listing Tasty Ice Cream Menu"
-#       must be used in the header/tail string sentences of the menu item data.
-#
-#       Sub-menu header/tail strings:
-#       Header string: "Start Listing Ice Cream Toppings Menu"
-#         Tail string: "End Listing Ice Cream Toppings Menu"
-#
-#       ARRAY_SOURCE_FILE="All_Ice_Cream_Menus.lib"
-#
-#       Listing of $ARRAY_SOURCE_FILE (All_Ice_Cream_Menus.lib)
-#               which includes menu item data:
-#
-#       Start Listing Tasty Ice Cream Menu (Required header, do not delete).
-#           Data for Menu item 1
-#           Data for Menu item 2
-#           Data for Menu item 3
-#       End  Listing Tasty Ice Cream Menu (Required line, do not delete).
-#
-#       Start Listing Ice Cream Toppings Menu (Required header, do not delete).
-#           Data for Menu item 1
-#           Data for Menu item 2
-#           Data for Menu item 3
-#       End Listing Ice Cream Toppings Menu (Required line, do not delete).
-#
 # Dependencies: f_menu_make, f_menu_arrays, f_create_show_menu.
 #
 f_create_a_menu () {
+      #
+      # The MENU_TITLE must match the strings in the ARRAY_SOURCE_FILE.
+      #
+      #  Example:
+      #   The run-time script file, "ice_cream.sh" may also contain the data
+      #   for both Main menu and sub-menus.
+      #
+      #     MENU_TITLE="All_Ice_Cream_Menu"
+      #     ARRAY_SOURCE_FILE="ice_cream.sh"
+      #
+      #   If you have a lot of menus, you may want to have all the menu data
+      #   for both Main menu and sub-menus in a separate library file,
+      #   "all_ice_cream_menus.lib".
+      #
+      #     MENU_TITLE="All_Ice_Cream_Menu"
+      #     ARRAY_SOURCE_FILE="all_ice_cream_menus.lib"
+      #
+      # Format for $ARRAY_SOURCE_FILE: ("ice_cream.sh" or "all_ice_cream_menus.lib")
+      #
+      #  Listing of $ARRAY_SOURCE_FILE ("ice_cream.sh" or "all_ice_cream_menus.lib")
+      #          which includes menu item data:
+      #
+      #  Start Listing Tasty Ice Cream Menu (Required header, do not delete).
+      #      Data for Menu item 1
+      #      Data for Menu item 2
+      #      Data for Menu item 3
+      #  End Listing Tasty Ice Cream Menu (Required line, do not delete).
+      #
+      #  Start Listing Ice Cream Toppings Menu (Required header, do not delete).
+      #      Data for Menu item 1
+      #      Data for Menu item 2
+      #      Data for Menu item 3
+      #  End Listing Ice Cream Toppings Menu (Required line, do not delete).
       #
       # Create $ARRAY_FILE from Array Source File.
       f_menu_make $1 $3 $5 $6
@@ -5167,9 +5409,13 @@ f_create_a_menu () {
 #    Uses: None.
 # Outputs: None.
 #
-# Summary: Display sub-menu. This may replace f_menu_sub_TEMPLATE.
+# Summary: Display sub-menu.
+#          Prerequisite is that a temporary file $5 containing the data from the ARRAY_SOURCE_FILE has already been created.
+#          So these lines in the ARRAY_SOURCE_FILE containing the menu item data have already been cut-pasted into a separate temporary file $5.
+#          ARRAY_SOURCE_FILE General Format:
+#          <#@@> <Menu Option> <#@@> <Description of Menu Option> <#@@> <Corresponding function or action or command>
 #
-# Dependencies: f_menu_make, f_menu_arrays, f_create_show_menu.
+# Dependencies: f_menu_arrays, f_create_show_menu.
 #
 f_create_menu () {
       #
@@ -5234,15 +5480,31 @@ f_menu_make () {
       STARTING_LINE=$(grep -n "Start Listing $MENU_TITLE" $4 | awk -F ":" '{print $1 }')
       ENDING_LINE=$(grep -n "End Listing $MENU_TITLE"     $4 | awk -F ":" '{print $1 }')
       #
-      # Copy text between $STARTING_LINE and $ENDING_LINE into a text file.
-      # Create sed command "$STARTING_LINE,$ENDING_LINEp" i.e. "31,51p" for STARTING_LINE=31, ENDING_LINE=51.
-      SEDSTR="$STARTING_LINE,$ENDING_LINE"
-      SEDSTR=$SEDSTR"p"
-      #
-      # Use eval command because of substitution of variable $SEDSTR for the actual sed command.
-      eval sed -n '$SEDSTR' $4 > $3
-      #
-      unset MENU_TITLE SEDSTR STARTING_LINE ENDING_LINE
+      if [ -z "$STARTING_LINE" ] || [ -z "$ENDING_LINE" ] ; then
+         echo >> $TEMP_FILE
+         echo "Data for the menu \"$MENU_TITLE\" was not found in the file:" > $TEMP_FILE
+         echo "$4" >> $TEMP_FILE
+         echo >> $TEMP_FILE
+         echo "A possible cause for this error is that the menu titles do not" >> $TEMP_FILE
+         echo "match between what is in the file and what f_menu_main_all_menus" >> $TEMP_FILE
+         echo "specified as a parameter." >> $TEMP_FILE
+         echo >> $TEMP_FILE
+         echo "When calling function f_menu_main_all_menus, make sure that it is using" >> $TEMP_FILE
+         echo "the same Menu Title as used in the file" >> $TEMP_FILE
+         echo "$4" >> $TEMP_FILE
+         f_message $1 "OK" "Error Creating Menu" $TEMP_FILE
+         exit 1
+      else
+         # Copy text between $STARTING_LINE and $ENDING_LINE into a text file.
+         # Create sed command "$STARTING_LINE,$ENDING_LINEp" i.e. "31,51p" for STARTING_LINE=31, ENDING_LINE=51.
+         SEDSTR="$STARTING_LINE,$ENDING_LINE"
+         SEDSTR=$SEDSTR"p"
+         #
+         # Use eval command because of substitution of variable $SEDSTR for the actual sed command.
+         eval sed -n '$SEDSTR' $4 > $3
+         #
+         unset MENU_TITLE SEDSTR STARTING_LINE ENDING_LINE
+      fi
       #
 }  # End of function f_menu_make.
 #
