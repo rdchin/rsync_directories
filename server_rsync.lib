@@ -19,62 +19,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-# +--------------------------------------------------------------------------+
-# |                                                                          |
-# |                 Customize Menu choice options below.                     |
-# |                                                                          |
-# +--------------------------------------------------------------------------+
-#
-#
-#                 >>> !!!Warning!!! <<<
-#
-# The Menu Item Descriptions cannot have semi-colons, colons, asterisks,
-# single-quotes (apostrophes), double-quotes, ampersands, greater-than and less-than signs.
-#
-# Forbidden characters include ; : * ' " - & > < / \
-#
-# These characters will compromise the creation of arrays which
-# in turn creates the menu.
-#
-# General Format: <#@@> <Menu Option> <#@@> <Description of Menu Option> <#@@> <Corresponding function or action or command>
-#
-# Format of <Corresponding function or action or command> when using f_create_a_menu
-#        f_create_menu^"text", "dialog", or "whiptail"^menu_generated.lib^Menu Name^Temporary File Name^Library name containing menu entries
-#
-# List of inputs for f_create_a_menu.
-#
-#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface application in use.
-#          $2 - GENERATED_FILE (The name of a temporary library file containing the suggested phrase "generated.lib" which contains the code to display the sub-menu).
-#          $3 - MENU_TITLE (Title of the sub-menu)
-#          $4 - TEMP_FILE (Temporary file).
-#          $5 - ARRAY_FILE (Temporary file) includes menu items imported from $ARRAY_SOURCE_FILE of a single menu.
-#          $6 - ARRAY_SOURCE_FILE (Not a temporay file) includes menu items from multiple menus.
-#
-# Format: <#@@> <Menu Option> <#@@> <Description of Menu Option> <#@@> <Corresponding function or action or cammand>
-#
-#@@Exit#@@Exit this menu.#@@break
-#
-#@@Synchronize#@@Synchronize two directories.#@@f_any^$GUI
-#
-#@@Log-file#@@Show latest log file.#@@f_display_log^$GUI
-#
-#@@Show Local/LAN drives#@@Show Local drives, LAN drive mount points.#@@f_show_mount_points^$GUI
-#
-#@@File Managers#@@Manage files and folders.#@@f_file_manager_select^$GUI^"/mnt"
-#
-#@@About#@@Version information of this script.#@@f_about^$GUI
-#
-#@@Code History#@@Display code change history of this script.#@@f_code_history^$GUI
-#
-#@@Version Update#@@Check for updates to this script and download.#@@f_check_version^$GUI
-#
-#@@Help#@@Display help message.#@@f_help_message^$GUI
-#
 # +----------------------------------------+
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-01-19 01:49"
+VERSION="2024-02-26 15:17"
 #
 # Commented out THIS_FILE since it will conflict other scripts which
 # use this library.
@@ -117,13 +66,74 @@ VERSION="2024-01-19 01:49"
 ##
 ## (Please see script "server_rsync.sh" for Code History information.)
 #
+# +--------------------------------------------------------------------------+
+# |                                                                          |
+# |                 Customize Menu choice options below.                     |
+# |                                                                          |
+# +--------------------------------------------------------------------------+
+#
+#
+#                 >>> !!!Warning!!! <<<
+#
+# The Menu Item Descriptions cannot have semi-colons, colons, asterisks,
+# single-quotes (apostrophes), double-quotes, ampersands, greater-than and less-than signs.
+#
+# Forbidden characters include ; : * ' " - & > < / \
+#
+# These characters will compromise the creation of arrays which
+# in turn creates the menu.
+#
+# General Format: <#@@> <Menu Option> <#@@> <Description of Menu Option> <#@@> <Corresponding function or action or command>
+#
+# Format of <Corresponding function or action or command> when using f_create_a_menu
+#        f_create_menu^"text", "dialog", or "whiptail"^menu_generated.lib^Menu Name^Temporary File Name^Library name containing menu entries
+#
+# List of inputs for f_create_a_menu.
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface application in use.
+#          $2 - GENERATED_FILE (The name of a temporary library file containing the suggested phrase "generated.lib" which contains the code to display the sub-menu).
+#          $3 - MENU_TITLE (Title of the sub-menu)
+#          $4 - TEMP_FILE (Temporary file).
+#          $5 - ARRAY_FILE (Temporary file) includes menu items imported from $ARRAY_SOURCE_FILE of a single menu.
+#          $6 - ARRAY_SOURCE_FILE (Not a temporay file) includes menu items from multiple menus.
+#
+# Format: <#@@> <Menu Option> <#@@> <Description of Menu Option> <#@@> <Corresponding function or action or cammand>
+#
+#! +--------------------------------------------------------------+
+#! | Start Listing Server Rsync Menu                              |
+#! |               (Required header, do not delete).              |
+#! +--------------------------------------------------------------+
+#
+#@@Exit#@@Exit this menu.#@@break
+#
+#@@Synchronize#@@Synchronize two directories.#@@f_any^$GUI
+#
+#@@Log-file#@@Show latest log file.#@@f_display_log^$GUI
+#
+#@@Show Local/LAN drives#@@Show Local drives, LAN drive mount points.#@@f_show_mount_points^$GUI
+#
+#@@File Managers#@@Manage files and folders.#@@f_file_manager_select^$GUI^"/mnt"
+#
+#@@About#@@Version information of this script.#@@f_about^$GUI
+#
+#@@Code History#@@Display code change history of this script.#@@f_code_history^$GUI
+#
+#@@Version Update#@@Check for updates to this script and download.#@@f_check_version^$GUI
+#
+#@@Help#@@Display help message.#@@f_help_message^$GUI
+#
+#! End Listing Server Rsync Menu (Required line, do not delete).
+#
 # +----------------------------------------+
 # |        Function f_check_version        |
 # +----------------------------------------+
 #
-#     Rev: 2022-05-19
-#  Inputs: $1 - "text", "dialog" or "whiptail" The command-line user-interface application in use.
+#     Rev: 2024-02-22
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - [OPTIONAL] File name to compare.
+#          $3 - [OPTIONAL] to control display of messages and interactive user questions.
+#                          null (default) - Display error and status messages and interactive user questions.
+#                          1              - Display error messages only (Silent mode).
 #          FILE_TO_COMPARE.
 #    Uses: SERVER_DIR, MP_DIR, LOCAL_REPO_DIR, $FILE_TO_COMPARE, FILE_LIST,
 #          VERSION, TEMP_FILE, ERROR.
@@ -139,6 +149,10 @@ VERSION="2024-01-19 01:49"
 #
 # Dependencies: f_version_compare.
 #
+# PLEASE NOTE: RENAME THIS FUNCTION WITHOUT SUFFIX "_TEMPLATE" AND COPY
+#              THIS FUNCTION INTO ANY SCRIPT WHICH DEPENDS ON THE
+#              LIBRARY FILE "common_bash_function.lib".
+#
 f_check_version () {
       #
       #
@@ -151,11 +165,15 @@ f_check_version () {
       #
       # LAN File Server shared directory.
       # SERVER_DIR="[FILE_SERVER_DIRECTORY_NAME_GOES_HERE]"
-        SERVER_DIR="//scotty/files"
+      if [ -z "$SERVER_DIR" ] ; then
+        SERVER_DIR="//file_server/files"
+      fi
       #
       # Local PC mount-point directory.
       # MP_DIR="[LOCAL_MOUNT-POINT_DIRECTORY_NAME_GOES_HERE]"
-        MP_DIR="/mnt/scotty/files"
+      if [ -z "$MP_DIR" ] ; then
+        MP_DIR="/mnt/file_server/files"
+      fi
       #
       # Local PC mount-point with LAN File Server Local Repository full directory path.
       # Example:
@@ -165,7 +183,9 @@ f_check_version () {
       #
       # Local PC mount-point with LAN File Server Local Repository full directory path.
       # LOCAL_REPO_DIR="$MP_DIR/[DIRECTORY_PATH_TO_LOCAL_REPOSITORY]"
-        LOCAL_REPO_DIR="/mnt/scotty/files/LIBRARY/PC-stuff/PC-software/BASH_Scripting_Projects/Repository"
+      if [ -z "$LOCAL_REPO_DIR" ] ; then
+        LOCAL_REPO_DIR="$MP_DIR/Local_Repository"
+      fi
       #
       # Local PC file to be compared.
       if [ $# -eq 2 ] ; then
@@ -312,25 +332,17 @@ f_any_select () {
       TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
       #
       # Get /mnt/ file server mount-points
-      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' > $TEMP_FILE"_directory_menu.txt"
+      #df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' > $TEMP_FILE"_directory_menu.txt"
       #
-      # Need to get rid of the forward-slashes in the first column of the  menu items.
-      # Replace "/" with "~" in directory names in the first column of the menu items and output first column into temp file1.
-      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' | awk '{ print $1 }' | sed -e 's|^/||g' -e 's|/|~|g' | sort > $TEMP_FILE"_directory_column_1.txt"
-      # Output second column into temp file2.
-      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' | awk '{ print $2 }' | sort > $TEMP_FILE"_directory_column_2.txt"
+      # Delete the forward-slashes in the first column of the  menu items using "Sed" to make the menu look better.
+      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' | sed -e 's|^/||g' > $TEMP_FILE"_directory_menu.txt"
       #
-      # Glue both first and second column together and output into temp file.
-      paste $TEMP_FILE"_directory_column_1.txt" $TEMP_FILE"_directory_column_2.txt" > $TEMP_FILE"_directory_menu.txt"
-      #
-      rm $TEMP_FILE"_directory_column_1.txt" $TEMP_FILE"_directory_column_2.txt"
-      #
-      # Set DEV to "Source" or "Target"
-      DEV=$2
+      # Set DIRSEL to "Source" or "Target" used only for the "awk" statement.
+      DIRSEL=$2
       #
       # Insert field marker "#@@" that the menu will use to format data.
       # When a menu item is selected, run function f_source_target_selected^$GUI^<selected menu item>
-      awk '{ print "#@@"$1"#@@"$2"#@@f_source_target_selected^$GUI^$DEV^"$1 }' $TEMP_FILE"_directory_menu.txt" > $TEMP_FILE"_directory_menu2.txt"
+      awk '{ print "#@@"$1"#@@"$2"#@@f_source_target_selected^$GUI^$DIRSEL^"$1 }' $TEMP_FILE"_directory_menu.txt" > $TEMP_FILE"_directory_menu2.txt"
       #
       # Put double-quotes around the 2nd phrase delimited by "#@@" which contains the mount point directory.
       # The forward-slashes (/) in the directory may mess up the creation of the data array for the menu by f_menu_arrays.
