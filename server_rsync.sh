@@ -24,7 +24,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-02-26 15:17"
+VERSION="2024-02-26 15:53"
 THIS_FILE=$(basename $0)
 FILE_TO_COMPARE=$THIS_FILE
 TEMP_FILE=$THIS_FILE"_temp.txt"
@@ -75,7 +75,7 @@ TARGET_DIR=$LOCAL_REPO_DIR
 #
 # Web Repository i.e. Hosted by GitHub.com or another web site.
 # WEB_REPOSITORY_URL="raw.githubusercontent.com/user/project/branch"
-WEB_REPOSITORY_URL="raw.githubusercontent.com/rdchin/ rsync_directories/master/"
+WEB_REPOSITORY_URL="raw.githubusercontent.com/rdchin/rsync_directories/master/"
 #
 # Warning: If the Github Repository is "Private", then anonymous downloads are not permitted.
 #
