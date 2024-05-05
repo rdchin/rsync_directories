@@ -24,7 +24,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-02-26 15:53"
+VERSION="2024-04-20 18:59"
 THIS_FILE=$(basename $0)
 FILE_TO_COMPARE=$THIS_FILE
 TEMP_FILE=$THIS_FILE"_temp.txt"
@@ -36,8 +36,11 @@ GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
 # AND TO INCLUDE ALL DEPENDENT SCRIPTS AND LIBRARIES TO DOWNLOAD.
 #
 # ALSO PLEASE EDIT f_check_version
-#
 #================================================================
+#
+#-------------------------------------------------
+# Set variables to check for network connectivity.
+#-------------------------------------------------
 #
 # Ping Local File Server Repository
 # PING_LAN_TARGET="[FILE SERVER NAME]"
@@ -86,6 +89,11 @@ WEB_REPOSITORY_URL="raw.githubusercontent.com/rdchin/rsync_directories/master/"
 #=================================================================
 #
 #
+# --------------------------------------------
+# Create a list of all dependent library files
+# and write to temporary file, FILE_LIST.
+# --------------------------------------------
+#
 # Temporary file FILE_LIST contains a list of file names of dependent
 # scripts and libraries.
 FILE_LIST=$THIS_FILE"_file_temp.txt"
@@ -94,7 +102,12 @@ FILE_LIST=$THIS_FILE"_file_temp.txt"
 echo "server_rsync.lib^Local^$LOCAL_REPO_DIR^$WEB_REPOSITORY_URL"          > $FILE_LIST
 echo "common_bash_function.lib^Local^$LOCAL_REPO_DIR^$WEB_REPOSITORY_URL" >> $FILE_LIST
 #
-# Create a name for a temporary file which will have a list of files which need to be downloaded.
+# Create a list of files FILE_DL_LIST, which need to be downloaded.
+# Format: [File Name]^[Local/Web]^[Local repository directory]^[web repository directory]
+# From FILE_LIST (list of script and library files), find the files which
+# need to be downloaded and put those file names in FILE_DL_LIST.
+#
+# Format: [File Name]^[Local/Web]^[Local repository directory]^[web repository directory]
 FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #
 # +----------------------------------------+
@@ -165,6 +178,9 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 # +----------------------------------------+
 #
 ## Code Change History
+##
+## 2024-04-20 *Section "Server Rsync Menu" changed wording of menu item for
+##             clarity.
 ##
 ## 2024-02-26 *Updated to latest standards.
 ##
@@ -491,7 +507,7 @@ f_display_common () {
 } # End of function f_display_common.
 #
 # +-----------------------------------------+
-# | Function f_menu_main_all_menus          |
+# |     Function f_menu_main_all_menus      |
 # +-----------------------------------------+
 #
 #     Rev: 2024-02-15
@@ -940,7 +956,6 @@ fdl_download_missing_scripts () {
       # script and library files) and detect which are missing and need
       # to be downloaded and then put those file names in FILE_DL_LIST ($2).
       #
-      #
       # Download files from Local Repository or Web GitHub Repository
       # or extract files from the compressed file "cli-app-menu-new-main.zip"
       # which may be downloaded from the repository on the Github.com website.
@@ -1015,6 +1030,7 @@ fdl_download_missing_scripts () {
                   if [ -z $DL_REPOSITORY ] && [ $DL_SOURCE = "Web" ] ; then
                      ERROR=1
                   fi
+                  #
                   case $DL_SOURCE in
                        Local)
                           # Download from Local Repository on LAN File Server.

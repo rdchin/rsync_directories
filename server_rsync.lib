@@ -23,7 +23,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-02-26 15:17"
+VERSION="2024-04-20 18:59"
 #
 # Commented out THIS_FILE since it will conflict other scripts which
 # use this library.
@@ -110,7 +110,7 @@ VERSION="2024-02-26 15:17"
 #
 #@@Log-file#@@Show latest log file.#@@f_display_log^$GUI
 #
-#@@Show Local/LAN drives#@@Show Local drives, LAN drive mount points.#@@f_show_mount_points^$GUI
+#@@Local/LAN storage#@@Show local removable storage devices and LAN mount points.#@@f_show_mount_points^$GUI
 #
 #@@File Managers#@@Manage files and folders.#@@f_file_manager_select^$GUI^"/mnt"
 #
