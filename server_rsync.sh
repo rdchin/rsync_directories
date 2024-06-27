@@ -24,7 +24,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-04-20 18:59"
+VERSION="2024-06-25 23:32"
 THIS_FILE=$(basename $0)
 FILE_TO_COMPARE=$THIS_FILE
 TEMP_FILE=$THIS_FILE"_temp.txt"
@@ -142,7 +142,7 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #&    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # +----------------------------------------+
-# |             Help and Usage             |
+# |   Help and Usage with Directory Trees  |
 # +----------------------------------------+
 #
 #?    Usage: bash server_rsync.sh [OPTION(S)]
@@ -172,12 +172,54 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #?
 #? bash server_rsync.sh --hist text
 #?                      --ver dialog
+#?
+#? This script allows for a single one-way rsync back-up.
+#?
+#
+# +----------------------------------------+
+# | Diagram of Source and Back-up dir tree |
+# +----------------------------------------+
+#
+#% This script allows for a single one-way rsync back-up.
+#%
+#% Diagram of Source and Back-up directory trees below:
+#%
+#%   Source Directory      Back-up Directory
+#%
+#%   /home/[sharename]     /parent-dir/server_rsync
+#%      |--file01             |
+#%      |--file02             +--/[hostname of source server]
+#%      +--file03                   |
+#%                                  +--/[sharename]
+#%                                        |--rsync_server_FROM_PC_[PC_SOURCE]_SHARE-POINT_[SOURCE_DIR]_TIMESTAMP_[DATE-TIME].log
+#%                                        |--file01
+#%                                        |--file02
+#%                                        +--file03
 #
 # +----------------------------------------+
 # |           Code Change History          |
 # +----------------------------------------+
 #
 ## Code Change History
+##
+## 2024-06-24 *Section "Help and Usage with Directory Trees"
+##             f_any
+##             f_check_dirs
+##             added directory tree documentation with a diagram of the
+##             Source and Back-up Directory tree structure.
+##
+## 2024-06-16 *f_any, f_log_format simplified log file name format.
+##            *f_rsync2 changed copy destination of log file.
+##
+## 2024-06-15 *TO-DO log file name shows "sdc1" even when "sda1" is chosen.
+##            *f_fzf added.
+##            *f_any changed to use f_fzf.
+##
+## 2024-06-14 *f_any, f_any_select, f_go_nogo_rsync, f_go_nogo_rsync_2,
+##             f_rsync, f_rsync_2, f_rsync_command optimized code and
+##             improved to display a standardized formatted log file.
+##            *f_choose_source_dir, f_choose_target_dir, f_check_dirs
+##             f_log_format f_log_display added.
 ##
 ## 2024-04-20 *Section "Server Rsync Menu" changed wording of menu item for
 ##             clarity.
@@ -199,13 +241,12 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 ## 2023-12-11 *f_any_select, f_source_target_selected, f_go_nogo_rsync,
 ##             f_go_nogo_rsync_2, f_rsync2, f_rsync_command improved user
 ##             messages and improved exit/cancel program flow.
+##            *f_go_nogo_rsync fixed bug
+##             "server_rsync.lib: line 578: [: too many arguments".
 ##
 ## 2023-12-01 *f_source_target_selected allowed the selection of a source
 ##             or target mount-point and then the selection of a specific
 ##             directory under that mount-point.
-##
-## 2023-11-30 *TO-DO f_go_nogo_rsync bug.
-##             /home/robert/server_rsync.lib: line 578: [: too many arguments
 ##
 ## 2023-11-23 *f_any_source, f_any_target changed the default mount points.
 ##
@@ -643,6 +684,37 @@ f_menu_main_all_menus () {
       fi
       #
 } # End of function f_menu_main_all_menus.
+#
+# +------------------------------------+
+# | Function f_help_directory_diagrams |
+# +------------------------------------+
+#
+#     Rev: 2021-03-07
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
+#          $2 - [OPTIONAL] to control display of prompt to continue.
+#                          null (Default) - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "OK"           - "OK" button or text prompt, display until either Enter key or "OK" button is pressed.
+#                          "NOK"          - No "OK" button or text prompt, display for $3 seconds before continuing automatically.
+#          $3 - [OPTIONAL] to control pause duration. Only used if $2="NOK".
+#                          $3 seconds pause to allow text to be read before continuing automatically.
+#          THIS_DIR, THIS_FILE, VERSION.
+#    Uses: DELIM.
+# Outputs: None.
+#
+# Summary: Display a Brief Description of a script by showing any text lines
+#           beginning with "#&".
+#
+# Dependencies: f_display_common.
+#
+f_help_directory_diagrams () {
+      #
+      # Display text (all lines beginning ("^") with "#& " but do not print "#& ").
+      # sed substitutes null for "#& " at the beginning of each line
+      # so it is not printed.
+      DELIM="^#%"
+      f_display_common $1 $DELIM $2 $3
+      #
+}  # End of f_help_directory_diagrams.
 #
 # +----------------------------------------+
 # |  Function fdl_dwnld_file_from_web_site |

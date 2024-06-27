@@ -23,7 +23,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-04-20 18:59"
+VERSION="2024-06-25 23:32"
 #
 # Commented out THIS_FILE since it will conflict other scripts which
 # use this library.
@@ -108,7 +108,7 @@ VERSION="2024-04-20 18:59"
 #
 #@@Synchronize#@@Synchronize two directories.#@@f_any^$GUI
 #
-#@@Log-file#@@Show latest log file.#@@f_display_log^$GUI
+#@@Log-file#@@Show latest log file.#@@f_log_display^$GUI
 #
 #@@Local/LAN storage#@@Show local removable storage devices and LAN mount points.#@@f_show_mount_points^$GUI
 #
@@ -119,6 +119,8 @@ VERSION="2024-04-20 18:59"
 #@@Code History#@@Display code change history of this script.#@@f_code_history^$GUI
 #
 #@@Version Update#@@Check for updates to this script and download.#@@f_check_version^$GUI
+#
+#@@Help Dir Trees#@@Display Source/Back-up directory trees.#@@f_help_directory_diagrams^$GUI
 #
 #@@Help#@@Display help message.#@@f_help_message^$GUI
 #
@@ -245,7 +247,7 @@ f_check_version () {
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #    Uses: TFSTAMP
-# Outputs: SOURCE_DIR, TARGET_DIR, SOURCE_DIR_STR_NAME, TARGET_DIR_STR_NAME, TARGET_FILESYSTEM TIME_FILE, LOG_FILE.
+# Outputs: SOURCE_DIR, TARGET_DIR, SOURCE_DIR_STR_NAME, TARGET_DIR_STR_NAME, TARGET_FILESYSTEM, LOG_FILE.
 #
 # Summary: Select Source and Target directories. Create log file name.
 #
@@ -253,10 +255,33 @@ f_check_version () {
 #
 f_any () {
       #
+      # Source directory name does not end with a forward-slash (/).
+      # Target directory name must end in forward-slash (/).
+      #
+      # This script allows for a single one-way rsync back-up.
+      #
+      #
+      # Diagram of Source and Back-up directory trees below:
+      #
+      #   Source Directory           Back-up Directory
+      #
+      #   /home/[sharename]          /parent-dir/server_rsync
+      #      |--file01                  +--/[hostname of source server]
+      #      |--file02                      +--/[sharename]
+      #      +--file03                          |--rsync_server_FROM_PC_[ PC_SOURCE ]_SHARE-POINT_[ SOURCE_DIR ]_TIMESTAMP_[ DATE-TIME ].log
+      #                                         |--file01
+      #                                         |--file02
+      #                                         +--file03
+      #
       # Select SOURCE_DIR.
       f_any_select $1 "Source"
+      ERROR=$?
       #
-      if [ $ERROR -eq 0 ] && [ -n "$SOURCE_DIR" ] ; then
+      if [ "$ERROR" -eq 0 ] && [ -n "$SOURCE_DIR" ] ; then
+         # Explore TARGET_DIR to find last server_rsync log file
+         # so that you may over-write the oldest TARGET_DIR backup.
+         f_fzf $1
+         #
          # Select TARGET_DIR.
          f_any_select $1 "Target"
          #
@@ -286,20 +311,15 @@ f_any () {
                  #
                  # TARGET_DIR_STR_NAME now now begins with an underscore
                  #
-                 # Define TIME_FILE using SOURCE_DIR_STR_NAME and TARGET_DIR_STR_NAME.
-                 # TIME_FILE is the file containing time stamps in clear text. TIME_FILE will be merged into LOG_FILE.
-                 TIME_FILE="rsync_time_stamp_from_PC_"$SOURCE_SERVER_NAME$SOURCE_DIR_STR_NAME"_to_PC_"$TARGET_SERVER_NAME$TARGET_DIR_STR_NAME".txt"
-                 #
-                 # Define LOG_FILE using SOURCE_DIR_STR_NAME.
-                 # LOG_FILE is the partial name of the file which contains rsync operation details from last run.
-                                  #
                  # Create time stamp for Log File name.
                  TFSTAMP=$(date --date=now +"%Y-%m-%d_%H%M.%S")
                  #
-                 LOG_FILE="rsync_from_PC"_$SOURCE_SERVER_NAME$SOURCE_DIR_STR_NAME"_to_PC_"$TARGET_SERVER_NAME$TARGET_DIR_STR_NAME"_"$TFSTAMP".log"
+                 # Specify the log file name.
+                 #                      rsync_server_FROM_PC_[ PC_SOURCE ]_SHARE-POINT_[ SOURCE_DIR ]_TIMESTAMP_[ DATE-TIME ].log
+                 SERVER_RSYNC_LOG_FILE="rsync_server_FROM_PC_"$SOURCE_SERVER_NAME"_SHARE-POINT"$SOURCE_DIR_STR_NAME"_TIMESTAMP_$TFSTAMP.log"
                  #
                  # Proceed with rsync procedure.
-                 f_go_nogo_rsync $1 "$SOURCE_DIR" "$TARGET_DIR" "$TIME_FILE" "$LOG_FILE" "$SOURCE_SERVER_NAME" "$TARGET_SERVER_NAME"
+                 f_go_nogo_rsync $1 "$SOURCE_DIR" "$TARGET_DIR" "$SERVER_RSYNC_LOG_FILE" "$SOURCE_SERVER_NAME" "$TARGET_SERVER_NAME"
                  #
                  unset TFSTAMP
                  ;;
@@ -323,17 +343,22 @@ f_any () {
 #          SOURCE_DIR, SOURCE_SERVER_NAME,
 #          TARGET_DIR, TARGET_SERVER_NAME.
 #
-# Summary: Select Source/Target directory.
+# Summary: Select Source/Target directory using a dynamic menu of mounted
+#          devices that changes according to the devices mounted on PC at
+#          mount-points "/mnt" and "/media" directories.
 #
 # Dependencies: None.
 #
 f_any_select () {
       #
+      # Create Source/Target Directory Menu which is a dynamic menu of mounted
+      # devices that changes according to the devices mounted on PC at
+      # mount-points "/mnt" and "/media" directories.
+      #
       TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
       #
+      ERROR=0
       # Get /mnt/ file server mount-points
-      #df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' > $TEMP_FILE"_directory_menu.txt"
-      #
       # Delete the forward-slashes in the first column of the  menu items using "Sed" to make the menu look better.
       df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' | sed -e 's|^/||g' > $TEMP_FILE"_directory_menu.txt"
       #
@@ -353,6 +378,25 @@ f_any_select () {
       #
       # Insert the first menu option at the first line.
       sed -i '1i #@@Exit#@@Return to previous menu.#@@break' $TEMP_FILE"_directory_menu.txt"
+      #
+      # Insert required header and footer in $TEMP_FILE"_directory_menu.txt".
+      sed -i '1i #' $TEMP_FILE"_directory_menu.txt"
+      sed -i '1i #! +--------------------------------------------------------------+' $TEMP_FILE"_directory_menu.txt"
+      sed -i '1i #! |               (Required header, do not delete).              |' $TEMP_FILE"_directory_menu.txt"
+      #
+      if [ "$2" = "Source" ] ; then
+         sed -i '1i #! | Start Listing Source Directory Menu                              |' $TEMP_FILE"_directory_menu.txt"
+      else
+         sed -i '1i #! | Start Listing Target Directory Menu                              |' $TEMP_FILE"_directory_menu.txt"
+      fi
+      #
+      echo "#" >> $TEMP_FILE"_directory_menu.txt"
+      #
+      if [ "$2" = "Source" ] ; then
+         echo "#! | End Listing Source Directory Menu" >> $TEMP_FILE"_directory_menu.txt"
+      else
+         echo "#! | End Listing Target Directory Menu" >> $TEMP_FILE"_directory_menu.txt"
+      fi
       #
       GENERATED_FILE=$THIS_DIR/$THIS_FILE"_directory_menu_generated.lib"
       #
@@ -379,8 +423,7 @@ f_any_select () {
       # Create arrays from data.
       f_menu_arrays $ARRAY_FILE
       #
-      # Create and show menu of local devices.
-      f_create_show_menu $1 $GENERATED_FILE $MENU_TITLE $MAX_LENGTH $MAX_LINES $MAX_CHOICE_LENGTH $TEMP_FILE
+      f_menu_main_all_menus $1 "$MENU_TITLE" $TEMP_FILE"_directory_menu.txt"
       #
       # Was a local device to mount selected?
       if [ -z "$ANS" ] ; then
@@ -425,8 +468,53 @@ f_any_select () {
          rm $THIS_DIR/$THIS_FILE"_menu_local_storage_temp.txt"
       fi
       #
-} # End of function f_any_select
+} # End of function f_any_select.
 #
+# +----------------------------------------+
+# |             Function f_fzf             |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
+#    Uses: None.
+# Outputs: None.
+#
+# Summary: Use application fzf to find the oldest rsync log file which has
+#          the date of the backup in the file name. Then you can take note
+#          of the mount-point and select it as the TARGET_DIR so that the
+#          oldest backup is over-written by the current backup.
+#
+# Dependencies: fzf.
+#
+f_fzf () {
+      #
+      type fzf >/dev/null 2>&1
+      ERROR=$?
+      #
+      # Is "fzf" installed?
+      if [ $ERROR -eq 0 ] ; then
+         # Yes, "fzf" is installed.
+         #
+         # fzf EXIT STATUS
+         #       0      Normal exit
+         #       1      No match
+         #       2      Error
+         #       130    Interrupted with CTRL-C or ESC
+         #
+         f_message text "OK" "Search for oldest server_rsync log file" "Find the oldest server_rsync log file and take note of the USB device (sda, sdb, sdc, or sdd).\n\nUse that USB 'sd' device as the TARGET_DIR in the 'Target Directory Menu'."
+         # Blank the screen.
+         clear
+         #
+         # Log File format:
+         # rsync_server_FROM_[ PC_SOURCE ]_[ SOURCE_DIR ]_TIMESTAMP_[ DATE-TIME ].log
+         fzf --no-multi --query=^rsync_server_FROM_scotty --preview 'less {}'
+      else
+         # No, "fzf" is not installed.
+         f_message $1 "OK" "Search for oldest server_rsync log file" "Check to see which mount-point has the oldest log file"
+         f_file_manager $1 /media/ 2
+      fi
+         #
+} # End of function f_fzf.
+         #
 # +----------------------------------------+
 # |   Function f_source_target_selected    |
 # +----------------------------------------+
@@ -446,12 +534,15 @@ f_any_select () {
 # Dependencies: f_any_select.
 #
 f_source_target_selected () {
+      #
       ERROR=0
       #
       # Directory name has "~" in path to prevent f_menu_arrays and f_create_show_menu called by f_any_select
       # from being messed up with the "/" forward slashes in the directory name.
       #
-      # Now that the directory has been chosen, restore the true directory name.
+      # Now that the directory has been chosen from the "Storage Device Menu,
+      # restore the true directory name.
+      #
       # Substitute "/" for "~" to restore true directory name.
       # Output directory name, set $ANS to directory name string.
       ANS="/"$(echo $3 | sed 's|~|/|g')
@@ -526,16 +617,146 @@ f_source_target_selected () {
 } # End of function f_source_target_selected.
 #
 # +----------------------------------------+
+# |      Function f_choose_source_dir      |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The command-line user-interface in use.
+#          $2 - SOURCE_DIR - Source directory.
+#    Uses: None.
+# Outputs: ERROR, SOURCE_DIR.
+#
+# Summary: Set SOURCE_DIR to user-entered directory names.
+#
+f_choose_source_dir () {
+      #
+      # Choose the Source Directory.
+      f_select_dir $1 "Select Source Directory" "$2" 1
+      #
+      SOURCE_DIR=$ANS
+      #
+      # Did the user try to Cancel or Esc?
+      if [ $ERROR -eq 0 ] ; then
+         # No, proceed with rsync process.
+         SOURCE_DIR=$ANS
+      else
+         SOURCE_DIR=""
+      fi
+      #
+} # End of function f_choose_source_dir.
+#
+# +----------------------------------------+
+# |      Function f_choose_target_dir      |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The command-line user-interface in use.
+#          $2 - TARGET_DIR - Target directory.
+#    Uses: None.
+# Outputs: ERROR, TARGET_DIR.
+#
+# Summary: Set TARGET_DIR to user-entered directory names.
+#
+f_choose_target_dir () {
+      #
+      # Choose the Target Directory.
+      f_select_dir $1 "Select Target Directory" "$2" 1
+      #
+      # Did the user try to Cancel or Esc?
+      if [ $ERROR -eq 0 ] ; then
+         # No, proceed with rsync process.
+         TARGET_DIR=$ANS
+      else
+         TARGET_DIR=""
+      fi
+      #
+} # End of function f_choose_target_dir.
+#
+# +----------------------------------------+
+# |           Function f_check_dirs        |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The command-line user-interface in use.
+#          $2 - SOURCE_DIR - Source directory.
+#          $3 - TARGET_DIR - Target directory.
+#    Uses: X.
+# Outputs: ERROR.
+#
+# Summary: Check if the directories SOURCE_DIR and TARGET_DIR exist.
+#
+f_check_dirs () {
+      #
+      if [ -d $2 ] && [ -d $3 ] ; then
+         # SOURCE_DIR and TARGET_DIR directories exist.
+         ERROR=0
+         # Check if TARGET_DIR is a sub-directory of the SOURCE_DIR
+         # If it is, rsync will go into a recursive non-ending loop.
+         case $3 in
+              $2*)
+                  # Invalid TARGET_DIR.
+                  ERROR=1
+                  #
+                  echo "Target Directory is a sub-directory of the Source Directory." > $TEMP_FILE
+                  echo >> $TEMP_FILE
+                  echo "SOURCE_DIR=$SOURCE_DIR" >> $TEMP_FILE
+                  echo >> $TEMP_FILE
+                  echo "TARGET_DIR=$TARGET_DIR" >> $TEMP_FILE
+                  echo >> $TEMP_FILE
+                  echo "Choose another Target Directory." >> $TEMP_FILE
+                  #
+                  f_message $1 "OK" "Directory Error" $TEMP_FILE
+                  #
+                  # Choose the Target Directory.
+                  f_choose_target_dir $1 $3
+              ;;
+         esac
+      else
+         # Directory missing.
+         ERROR=1
+         #
+         if [ ! -d $2 ] ; then
+            echo "Source Directory does not exist." > $TEMP_FILE
+            echo >> $TEMP_FILE
+            echo "$SOURCE_DIR" >> $TEMP_FILE
+            echo  >> $TEMP_FILE
+            echo "Server-Rsync backup aborted due to missing directory." >> $TEMP_FILE
+            #
+            f_message $1 "OK" "Directory Error" $TEMP_FILE
+         fi
+         #
+         if [ ! -d $3 ] ; then
+            echo "Target Directory does not exist." > $TEMP_FILE
+            echo >> $TEMP_FILE
+            echo "$TARGET_DIR" >> $TEMP_FILE
+            echo  >> $TEMP_FILE
+            echo "Server-Rsync backup aborted due to missing directory." >> $TEMP_FILE
+            echo  >> $TEMP_FILE
+            echo "Does the Back-up Directory need to be created?" >> $TEMP_FILE
+            echo  >> $TEMP_FILE
+            echo  >> $TEMP_FILE
+            echo "You need to create a Back-up Directory with the format:" >> $TEMP_FILE
+            echo  >> $TEMP_FILE
+            echo "     /[mount-point]/server_rsync/[hostname of source server]/[sharename]"  >> $TEMP_FILE
+            echo "i.e. /media/PC_Bob_backup/sda1/server_rsync/PC_Sam_source/public_files"  >> $TEMP_FILE
+            echo  >> $TEMP_FILE
+            echo "Press OK to display Source/Back-up directory trees" >> $TEMP_FILE
+            #
+            f_message $1 "OK" "Directory Error" $TEMP_FILE
+            #
+            f_help_directory_diagrams^$GUI
+         fi
+      fi
+      #
+} # End of function f_check_dirs.
+#
+# +----------------------------------------+
 # |        Function f_go_nogo_rsync        |
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE_DIR Source directory.
 #          $3 - TARGET_DIR Target directory.
-#          $4 - TIME_FILE includes date stamps of rsync.
-#          $5 - LOG_FILE Log file partial name.
-#          $6 - SOURCE_SERVER_NAME Name of Source file server.
-#          $7 - TARGET_SERVER_NAME Name of Target file server.
+#          $4 - Basename Log file of rsync command (without /var/log/rsync).
+#          $5 - SOURCE_SERVER_NAME Name of Source file server.
+#          $6 - TARGET_SERVER_NAME Name of Target file server.
 #          ERROR.
 #    Uses: ANS
 # Outputs: None.
@@ -553,17 +774,13 @@ f_go_nogo_rsync () {
       fi
       #
       # Do the SOURCE and TARGET directories exist?
-      if [ -d $2 ] && [ -d $3 ] ; then
-         ERROR=$?
+      f_check_dirs $1 "$2" "$3"
+      if [ $ERROR -eq 0 ] ; then
          # Yes, directories exists.
-         if [ $ERROR -eq 0 ] ; then
-            f_go_nogo_rsync_2 "$1" "$2" "$3" "$4" "$5" "$6" "$7"
-            #
-         else
-            f_message $1 "OK" "Failed Mount" "Cannot synchronize due to mounting problems.\nrsync is aborted."
-         fi
+         f_go_nogo_rsync_2 "$1" "$2" "$3" "$4" "$5" "$6"
          #
-         unset ANS RSYNC_LOG_FILE
+      else
+         f_message $1 "OK" "Failed Mount" "Cannot synchronize due to mounting problems.\nrsync is aborted."
       fi
       #
 } # End of function f_go_nogo_rsync
@@ -575,12 +792,11 @@ f_go_nogo_rsync () {
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE_DIR Source directory.
 #          $3 - TARGET_DIR Target directory.
-#          $4 - TIME_FILE includes date stamps of rsync.
-#          $5 - LOG_FILE Log file partial name.
-#          $6 - SOURCE_SERVER_NAME Name of Source file server.
-#          $7 - TARGET_SERVER_NAME Name of Target file server.
+#          $4 - Basename Log file of rsync command (without /var/log/rsync).
+#          $5 - SOURCE_SERVER_NAME Name of Source file server.
+#          $6 - TARGET_SERVER_NAME Name of Target file server.
 #          ERROR.
-#    Uses: ANS
+#    Uses: ANS, DIR_SIZE.
 # Outputs: None.
 #
 # Summary: Check requirements and parameters before rsync.
@@ -589,7 +805,7 @@ f_go_nogo_rsync () {
 #
 f_go_nogo_rsync_2 () {
       #
-      echo "Synchronization by rsync from SOURCE to TARGET." > $TEMP_FILE
+      echo " Script: $THIS_FILE (version $VERSION)" > $TEMP_FILE
       echo >> $TEMP_FILE
       echo "From SOURCE directory:" >> $TEMP_FILE
       echo "$2" >> $TEMP_FILE
@@ -598,17 +814,14 @@ f_go_nogo_rsync_2 () {
       echo "$3" >> $TEMP_FILE
       echo >> $TEMP_FILE
       echo "Log file:" >> $TEMP_FILE
-      echo "$5" >> $TEMP_FILE
-      echo >> $TEMP_FILE
-      echo "Date stamp file:" >> $TEMP_FILE
       echo "$4" >> $TEMP_FILE
       echo >> $TEMP_FILE
-      echo "Is this correct? Last chance to abort." >> $TEMP_FILE
-      echo "                 < No > aborts rsync." >> $TEMP_FILE
-      # This was just to make the text prompt more readable than having one long string with "\n" for newline.
-      # I have to write a conversion from text file to a string with newline converted to "\n".
-      #f_yn_question $1 "N" "Confirmation of SOURCE/TARGET" $TEMP_FILE
-      f_yn_question $1 "N" "Confirmation of SOURCE/TARGET" "Synchronization by rsync from SOURCE to TARGET.\n\nFrom SOURCE directory:\n\"$2\" \n\nTo TARGET directory:\n\"$3\" \n\nLog file:\n$5\n\nDate stamp file:\n$4\n\nIs this correct? Last chance to abort.\n< No > aborts rsync."
+      echo "Is this correct?" >> $TEMP_FILE
+      echo "Next screen will confirm choice." >> $TEMP_FILE
+      #
+      f_message $1 "OK" "Summary Before Rsync Back-up" $TEMP_FILE
+      #
+      f_yn_question $1 "Y" "Confirmation of SOURCE/TARGET" "Proceed with Rsync backup?"
       #
       if [ $ANS -eq 0 ] ; then
          # Yes, use selected directories.
@@ -622,7 +835,7 @@ f_go_nogo_rsync_2 () {
             # Yes, proceed with rsync.
             #
             # Proceed with rsync.
-            f_rsync "$1" "$2" "$3" "$4" "$5" "$6" "$7"
+            f_rsync "$1" "$2" "$3" "$4" "$5" "$6"
          fi
          #
          unset DIR_SIZE
@@ -638,14 +851,12 @@ f_go_nogo_rsync_2 () {
 # +------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#          $2 - SOURCE Source directory.
-#          $3 - TARGET Target directory.
-#          $4 - TIME_FILE includes date stamps of rsync.
-#          $5 - LOG_FILE Log file partial name.
-#          $6 - SOURCE_SERVER_NAME Name of Source file server.
-#          $7 - TARGET_SERVER_NAME Name of Target file server.
-#          TARGET_FILESYSTEM, THIS_FILE, VERSION.
-#    Uses: X, TIME_FILE.
+#          $2 - SOURCE_DIR Source directory.
+#          $3 - TARGET_DIR Target directory.
+#          $4 - Basename Log file of rsync command (without /var/log/rsync).
+#          $5 - SOURCE_SERVER_NAME Name of Source file server.
+#          $6 - TARGET_SERVER_NAME Name of Target file server.
+#    Uses: None.
 # Outputs: None.
 #
 # Summary: Check directory pre-requisites and ask final go/nogo question.
@@ -679,10 +890,8 @@ f_rsync () {
          f_message $1 "OK" "Restart Needed" "Re-start this script once the external device is mounted properly\nat the mount-point directory."
       else
          # Source and Target directories validated, use selected directories to rsync.
-         f_rsync2 "$1" "$2" "$3" "$4" "$5" "$6" "$7"
+         f_rsync2 "$1" "$2" "$3" "$4" "$5" "$6"
       fi
-      #
-      unset X Y
       #
 } # End of function f_rsync
 #
@@ -691,26 +900,24 @@ f_rsync () {
 # +------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#          $2 - SOURCE Source directory.
-#          $3 - TARGET Target directory.
-#          $4 - TIME_FILE includes date stamps of rsync.
-#          $5 - LOG_FILE Log file partial name.
-#          $6 - SOURCE_SERVER_NAME Name of Source file server.
-#          $7 - TARGET_SERVER_NAME Name of Target file server.
-#          TARGET_FILESYSTEM, THIS_FILE, VERSION.
-#    Uses: TIME_FILE.
+#          $2 - SOURCE_DIR Source directory.
+#          $3 - TARGET_DIR Target directory.
+#          $4 - Basename Log file of rsync command (without /var/log/rsync).
+#          $5 - SOURCE_SERVER_NAME Name of Source file server.
+#          $6 - TARGET_SERVER_NAME Name of Target file server.
+#    Uses: None.
 # Outputs: None.
 #
 # Summary: Start actual rsync and create log file.
 #
-# Dependencies: f_test_connection, f_rsync_command, f_yn_question, f_display_log.
+# Dependencies: f_test_connection, f_rsync_command, f_yn_question, f_log_display.
 #
 f_rsync2 () {
       #
-      f_test_connection $1 $6
+      f_test_connection $1 $5
       #
       if [ $ERROR -eq 0 ] ; then
-         f_test_connection $1 $7
+         f_test_connection $1 $6
          #
          if [ $ERROR -eq 0 ] ; then
             #
@@ -724,49 +931,25 @@ f_rsync2 () {
                return 1
             fi
             #
-            # Write rsync parameters to file $TIME_FILE.
-            echo "Synchronization by rsync from SOURCE to TARGET is complete." >>$4
-            echo >>$4
-            echo " from SOURCE directory:" >>$4
-            echo "$2" >>$4
-            echo >>$4
-            echo "   to TARGET directory:" >>$4
-            echo "$3" >>$4
-            echo  >>$4
-            echo "Date Stamp File:" >>$4
-            echo "$4" >>$4
-            echo  >>$4
-            echo "       Log file:" >>$4
-            echo "$5" >>$4
-            echo >>$4
-            echo "Backup script: $THIS_FILE ver. $VERSION" >>$4
-            echo "has completed its run." >>$4
-            echo >>$4
-            echo >>$4
+            f_log_format $1 "$4" "$START_TIME" "$END_TIME" "$2" "$3"
             #
-            # Append contents of $LOG_FILE to contents of $TIME_FILE.
-            echo "-------------------------" >> $4
-            echo "Log of rsync events below" >> $4
-            echo "-------------------------" >> $4
-            cat $5 >> $4
-            #
-            # Rename $TIME_FILE (which now includes contents of $LOG FILE) to $LOG_FILE.
-            sudo mv $4 $5
-            #
-            # Time stamp the $LOG FILE.
-            #touch $5
+            # 2024-06-16 Comment out code to copy log file to Source Directory.
+            #            I decided not to have a bunch of log files clogging up the $SOURCE_DIR.
+            # Is the SOURCE_DIR the different from the directory which log file exists (where rsync_snapshot_backup.sh exists)?
+            #if [ "$THIS_DIR" != "$2" ] ; then
+            #   # Yes, SOURCE_DIR is different from directory of log file, so copy to SOURCE_DIR.
+            #   sudo cp $4 $2
+            #fi
             #
             # Copy $LOG_FILE into $TARGET directory.
-            sudo cp $5 $3
+            sudo cp $4 $3
+            #
             # Copy log file (on backup media) to localhost's /var/log/rsync directory.
-            sudo cp $5 /var/log/rsync
+            sudo cp $4 /var/log/rsync
             #
-            f_yn_question $1 "Y" "View log file?" "Do you want to see the log file?"
-            #
-            if [ $ANS -eq 0 ] ; then
-               # Yes, show log file.
-               f_display_log $1 $5
-            fi
+            # Move log file to TEMP_FILE then f_message will delete TEMP_FILE.
+            mv $4 $TEMP_FILE
+            f_log_display $1 $TEMP_FILE
          fi
       fi
       #
@@ -779,11 +962,10 @@ f_rsync2 () {
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE Source directory.
 #          $3 - TARGET Target directory.
-#          $4 - TIME_FILE includes date stamps of rsync.
-#          $5 - LOG_FILE Log file partial name.
-#  Inputs: TARGET_FILESYSTEM, THIS_FILE, VERSION.
+#          $4 - Basename Log file of rsync command (without /var/log/rsync).
+#          TARGET_FILESYSTEM, THIS_FILE, VERSION.
 #    Uses: TIME_FILE.
-# Outputs: None.
+# Outputs: START_TIME, END_TIME.
 #
 # Summary: Do rsync file synchronization.
 #
@@ -791,11 +973,8 @@ f_rsync2 () {
 #
 f_rsync_command () {
       #
-      # Record the start date/time of the backup.
-      # Use printf to put everything on a single line for easy readability.
-      # The echo command inserts <CR><LF> even if using -n switch so unused.
-      #
-      printf "$THIS_FILE  started at: ">$4;date  +"%A %B %d, %Y -- %T">>$4
+      # Record the Start date/time of the rsync backup.
+      START_TIME=$(date  +"%A %B %d, %Y -- %T")
       #
       case $TARGET_FILESYSTEM in
            linux | ext2 | ext3 | ext4)
@@ -808,9 +987,9 @@ f_rsync_command () {
               # Personal preference is not to use --archive but to specify each option separately.
               #
               # Are all the required parameters entered?
-              if [ -n "$5" ] && [ -n "$2" ] && [ -n "$3" ] ; then
+              if [ -n "$4" ] && [ -n "$2" ] && [ -n "$3" ] ; then
                  # Yes, confirm rsync command.
-                 f_ask_question $1 "Rsync Command" "Enter rsync command (insert '--dry-run' for a trial run)" "sudo rsync --recursive --verbose --itemize-changes --human-readable --size-only --progress --delete --links --times --perms --group --owner --exclude '.gvfs' --log-file=$5 $2 $3"
+                 f_ask_question $1 "Rsync Command" "Enter rsync command (insert '--dry-run' for a trial run)" "sudo rsync --recursive --verbose --itemize-changes --human-readable --size-only --progress --delete --links --times --perms --group --owner --exclude '.gvfs' --log-file=/var/log/rsync/$4 $2 $3"
               else
                  f_message $1 "OK" "Required Parameters Missing" "Rsync parameters [ SOURCE_DIR ], [ TARGET_DIR ] or [ LOG-FILE ] missing.\nCannot continue with Rsync."
               fi
@@ -824,9 +1003,9 @@ f_rsync_command () {
               # sudo rsync --recursive --times --devices --verbose --human-readable --size-only --progress --delete --exclude '.gvfs' --log-file=$5 $2 $3
               #
               # Are all the required parameters entered?
-              if [ -n "$5" ] && [ -n "$2" ] && [ -n "$3" ] ; then
+              if [ -n "$4" ] && [ -n "$2" ] && [ -n "$3" ] ; then
                  # Yes, confirm rsync command.
-                 f_ask_question $1 "Rsync Command" "Enter rsync command (insert '--dry-run' for a trial run)" "sudo rsync --recursive --times --devices --verbose --human-readable --size-only --progress --delete --exclude '.gvfs' --log-file=$5 $2 $3"
+                 f_ask_question $1 "Rsync Command" "Enter rsync command (insert '--dry-run' for a trial run)" "sudo rsync --recursive --times --devices --verbose --human-readable --size-only --progress --delete --exclude '.gvfs' --log-file=/var/log/rsync/$4 $2 $3"
               else
                  f_message $1 "OK" "Required Parameters Missing" "Rsync parameters [ SOURCE_DIR ], [ TARGET_DIR ] or [ LOG-FILE ] missing.\nCannot continue with Rsync."
               fi
@@ -843,11 +1022,9 @@ f_rsync_command () {
          if [ $ERROR -ne 0 ] ; then
             f_message $1 "OK" "Rsync Error" "The rsync command failed.\nCommand: $ANS"
          fi
-         # Record the end date/time of the backup.
-         # Use printf to put everything on a single line for easy readability.
-         # The echo command inserts <CR><LF> even if using -n switch so unused.
          #
-         printf "$THIS_FILE finished at: ">>$4;date  +"%A %B %d, %Y -- %T">>$4
+         # Record the End date/time of the rsync backup.
+         END_TIME=$(date  +"%A %B %d, %Y -- %T")
          #
          # Blank the screen.
          clear
@@ -1156,19 +1333,95 @@ f_rsync_command () {
 } # End of function f_rsync_command
 #
 # +----------------------------------------+
-# |         Function f_display_log         |
+# |         Function f_log_format          |
+# +----------------------------------------+
+#
+#     Rev: 2024-06-13
+#  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
+#          $2 - Basename Log file of rsync command (without /var/log/rsync).
+#          $3 - Start time.
+#          $4 - End time.
+#          $5 - SOURCE_DIR.
+#          $6 - TARGET_DIR.
+#          Rsync log file in /var/log/rsync/$2.
+#          THIS_FILE, VERSION.
+#    Uses: None.
+# Outputs: $LOG_FILE.
+#
+# Summary: Create standardized formatted log file.
+#
+# Dependencies: f_message.
+#
+f_log_format () {
+      #
+      # ------------------------------
+      # Log file format specification.
+      # ------------------------------
+      #
+      # Script: [ NAME OF SCRIPT ] (version $VERSION)
+      #
+      # [ NAME OF SCRIPT ] started at: Monday June 10, 2024 -- 09:05:01
+      # [ NAME OF SCRIPT ] finished at: Monday June 10, 2024 -- 09:05:45
+      #
+      #  from SOURCE directory:
+      # [ $SOURCE_DIR ]
+      #
+      #    to TARGET directory:
+      # [ $TARGET_DIR ]
+      #
+      #        Log file:
+      # [ LOG_FILE.log ]
+      # rsync_server_FROM_PC_[ PC_SOURCE ]_SHARE-POINT_[ SOURCE_DIR ]_TIMESTAMP_[ DATE-TIME ].log
+      #
+      # -------------------------
+      # Log of rsync events below
+      # -------------------------
+      #
+      # [ Rsync Events listed here ]
+      #
+      # ---------------------------
+      # End of Log  of rsync events
+      # ---------------------------
+      #
+      echo "Script: $THIS_FILE (version $VERSION)" > $2
+      echo >> $2
+      echo "$THIS_FILE started at: $3" >> $2
+      echo "$THIS_FILE finished at: $4" >> $2
+      echo >> $2
+      echo "  from SOURCE directory:" >> $2
+      echo $5 >> $2
+      echo >> $2
+      echo "    to TARGET directory:" >> $2
+      echo $6 >> $2
+      echo >> $2
+      echo "               Log file:" >> $2
+      echo $2 >> $2
+      echo >> $2
+      echo "-------------------------" >> $2
+      echo "Log of rsync events below" >> $2
+      echo "-------------------------" >> $2
+      cat /var/log/rsync/$2 >> $2
+      echo "--------------------------" >> $2
+      echo "End of Log of rsync events" >> $2
+      echo "--------------------------" >> $2
+      #
+} # End of function f_log_format.
+#
+# +----------------------------------------+
+# |         Function f_log_display         |
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#          $2 - $LOG_FILE (optional).
+#          $2 - [OPTIONAL] Log file of rsync command (with directory name).
+#                          i.e. /var/log/rsync/[ Log file name ].
 #    Uses: X, Y, TEMP_FILE.
 # Outputs: None.
 #
 # Summary: Display latest log file.
 #
-# Dependencies: f_message.
+# Dependencies: f_message, f_select_file.
 #
-f_display_log () {
+f_log_display () {
       #
       if [ -n "$2" ] ; then
          # If $2 (log file) is already specified, then display.
@@ -1200,41 +1453,7 @@ f_display_log () {
          fi
       fi
       #
-} # End of function f_display_log.
-#
-# +----------------------------------------+
-# |    Function f_display_var_log_rsync    |
-# +----------------------------------------+
-#
-#  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#          $2 - $LOG_FILE (optional).
-#    Uses: X, Y.
-# Outputs: None.
-#
-# Summary: Display latest log file.
-#
-# Dependencies: f_message.
-#
-f_display_var_log_rsync (){
-      #
-      # View the latest var/log file from a previeus running of script, server_rsync.
-      ls -tC /var/log/rsync | head -n 1 >temp.txt
-      XX="Display latest log file: /var/log/rsync/$(cat temp.txt)"
-      YY="/var/log/rsync/$(cat temp.txt)"
-      echo $XX >temp.txt
-      echo >>temp.txt
-      cat $YY >>temp.txt
-      f_message $1 "OK" "Last log in /var/log/rsync/ (use arrow keys to scroll up/down/side-ways)" temp.txt
-      #
-      # Delete temporary file.
-      if [ -e temp.txt ] ; then
-         rm temp.txt
-      fi
-      #
-      # Discard these variables.
-      unset X Y XX YY
-      #
-} # End of function f_display_var_log_rsync.
+} # End of function f_log_display.
 #
 # +----------------------------------------+
 # |      Function f_file_manager_select    |
