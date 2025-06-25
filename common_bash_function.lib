@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# ©2024 Copyright 2024 Robert D. Chin
+# ©2025 Copyright 2025 Robert D. Chin
 # Email: RDevChin@Gmail.com
 #
 # Usage: source common_bash_function.lib
@@ -23,7 +23,7 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-06-26 14:36"
+VERSION="2025-06-23 23:43"
 #
 # WARNING: Do not define $THIS_FILE within a library script.
 #
@@ -77,6 +77,41 @@ VERSION="2024-06-26 14:36"
 ##
 ## (After each edit made, please update Code History and VERSION.)
 ##
+## 2025-06-23 *f_show_mount_points improved data display.
+##
+## 2025-05-12 *f_text_editor added geany app and improved documention.
+##
+## 2025-04-10 *f_text_editor added kwrite, kate apps.
+##            *f_select_dir, f_select_dir_verify improved documentation.
+##
+## 2025-04-02 *f_select_file_output deleted code to reset $ERROR since
+##             function is not used in a while [ $ERROR -eq 0 ] loop.
+##            *f_select_dir, f_select_dir_verify add variable $DIR_OK
+##             since $ERROR or $ANS cannot be used to indicate the
+##             success of failure of the function in selecting a directory.
+##
+## 2025-03-26 *f_mount_loop deleted extraneous parameter that never passed.
+##
+## 2025-03-24 *f_mount_loop added.
+##
+## 2025-03-16 *f_select_dir_verify corrected documentation.
+##
+## 2025-02-06 *f_text_editor corrected documentation.
+##
+## 2024-12-23 *f_text_editor bug fixed in opening target text file.
+##
+## 2024-12-19 *f_text_editor bug fixed in target text file detection.
+##
+## 2024-07-29 *f_show_mount_points improved display.
+##
+## 2024-07-17 *f_menu_main_all_menus_TEMPLATE, f_web_browser updated the
+##             documentation comments for consistency.
+##
+## 2024-06-27 *f_select_dir
+##             f_select_dir_fzf
+##             f_select_file
+##             Updated Revision dates comment.
+##
 ## 2024-06-26 *f_select_dir bug fixed which only affected $GUI="text" or
 ##             $GUI="whiptail" where the function f_select_dir_fzf was
 ##             called twice instead of only once.
@@ -85,7 +120,7 @@ VERSION="2024-06-26 14:36"
 ##             f_select_file
 ##             bug fixed which only affected $GUI="text" or $GUI="whiptail"
 ##             where any selection was rejected due to not resetting the
-##             $ERROR variable to $ERROR=0 after exiting the while-loop.3       
+##             $ERROR variable to $ERROR=0 after exiting the while-loop.3
 ##            *f_version_compare
 ##             f_version_compare_2
 ##             f_version_compare_3
@@ -1767,10 +1802,13 @@ f_show_mount_points () {
       # Blank the screen.
       clear
       #
+      TEMP_FILE_2=$TEMP_FILE"_2.txt"
+      TEMP_FILE_3=$TEMP_FILE"_3.txt"
+      #
       echo "Local PC is "$HOSTNAME"." >$TEMP_FILE
-      echo "------------------------------------------------------------------" >>$TEMP_FILE
-      echo "Display status of any shared directories from remote file servers." >>$TEMP_FILE
-      echo "------------------------------------------------------------------" >>$TEMP_FILE
+      echo "-------------------------------------------------------------------------------" >>$TEMP_FILE
+      echo "Display status of any shared directories from remote file servers."              >>$TEMP_FILE
+      echo "-------------------------------------------------------------------------------" >>$TEMP_FILE
       #
       # Note: The applications "df" and "findmnt" can show the same
       #       formatted information using certain optional parameters.
@@ -1795,42 +1833,87 @@ f_show_mount_points () {
       # false error message "df: /run/user/1000/doc: Operation not permitted"
       #
       # Get column header line.
-      echo "REMOTE FILESYSTEM          SIZE   USED  USE% AVAIL MOUNTED ON" >>$TEMP_FILE
+      echo "REMOTE SIZE USED USE% AVAIL MOUNT-POINT" >$TEMP_FILE_2
       #
       # Get /mnt/ file server mount-points
-      findmnt --all --df --output=source,size,used,use%,avail,target | grep /mnt/ >>$TEMP_FILE
+      findmnt --all --df --output=source,size,used,use%,avail,target | grep /mnt/ >>$TEMP_FILE_2
       ERROR=$?
+      #
+      # Make pretty display.
+      column --table $TEMP_FILE_2 >>$TEMP_FILE
+      #
+      echo >>$TEMP_FILE
+      echo "-------------------------------------------------------------------------------" >>$TEMP_FILE
+      echo "Display usernames, shared remote directories, and mount-points."                 >>$TEMP_FILE
+      echo "-------------------------------------------------------------------------------" >>$TEMP_FILE
       #
       # Are there any file server share-points mounted on /mnt/?
       if [ $ERROR -eq 0 ] ; then
          # Yes, remote file server share-points mounted.
-         echo >>$TEMP_FILE
+         # Get column header line.
+         echo "USERNAME STATUS REMOTE -- MOUNT-POINT" >$TEMP_FILE_2
+         #
          # Get username, mounted file server share-point, mount-point information from /etc/mtab.
-         grep "//" /etc/mtab | awk -F "," '{ print $1,$5 }' | awk '{ print $5" mounted "$1." on "$2}' >>$TEMP_FILE
-         echo >>$TEMP_FILE
+         #
+         # Username is at different parts in the file "mtab" depending on the Linux distribution.
+         #
+         # In Arch-based distros it is at the 6th comma-delimited piece, in Debian-based distros it is at the 5th comma-delimited piece.
+         # That is the reason that the awk-sed commands below do not use comma-delimiters but insert "^" carot-delimiters to extract the data.
+         #
+         # 1. grep gets mounted share-points:
+         #        [share-point] [mount-point] etc.
+         # 2. 1st awk prints first 2 fields, inserts "^" carot, prints entire line gotten from grep:
+         #        [share-point] [mount-point]^[share-point] [mount-point] cifs rw,relatime,vers=3.1.1,cache=strict,username=[user-name], etc.
+         # 3. sed inserts "^" carot before "username=":
+         #        [share-point] [mount-point]^[share-point] [mount-point] cifs rw,relatime,vers=3.1.1,cache=strict,^username=[user-name], etc.
+         #                 (1st field)       ^carot                                                                ^carot    (3rd field)
+         # 4. 2nd awk prints 1st and 3rd "^" fields:
+         #        [share-point] [mount-point] username=[user-name],etc.
+         # 5. 3rd awk prints only the desired data, ignoring everything else:
+         #        [share-point] [mount-point] username=[user-name]
+         # 6. 4th awk prints data in the desired final format.
+         #        username=[user-name] mounted [share-point] on [mount-point]
+         # 7. column formats data into pretty columns.
+         #
+         grep "//" /etc/mtab | awk '{ print $1" "$2"^"$0 }'| sed 's/username=/\^username=/g' | awk -F "^" '{ print $1" "$3 }' | awk -F "," '{ print $1 }' | awk '{ print $3" mounted "$1" on "$2 }' >> $TEMP_FILE_2
+         echo >>$TEMP_FILE_2
+         #
+         # Make pretty display.
+         column --table $TEMP_FILE_2 >>$TEMP_FILE
       else
          # No, remote file server share-points not mounted.
-         echo "N/A                        N/A    N/A   No remote server mounted" >>$TEMP_FILE
-         echo >>$TEMP_FILE
+         # Get column header line.
+         echo "USERNAME MOUNTED REMOTE ON MOUNT-POINT" >$TEMP_FILE_2
+         echo "N/A N/A N/A  No-Remote-shares on any-Mount-points" >>$TEMP_FILE_2
+         echo >>$TEMP_FILE_2
+         #
+         # Make pretty display.
+         column --table $TEMP_FILE_2 >>$TEMP_FILE
       fi
       #
-      echo "----------------------------------------------------------------------" >>$TEMP_FILE
-      echo "Display status of any MOUNTED local block devices i.e. USB drives etc." >>$TEMP_FILE
-      echo "----------------------------------------------------------------------" >>$TEMP_FILE
+      echo >>$TEMP_FILE
+      echo "-------------------------------------------------------------------------------" >>$TEMP_FILE
+      echo "Display status of any MOUNTED local block devices i.e. USB drives etc."          >>$TEMP_FILE
+      echo "-------------------------------------------------------------------------------" >>$TEMP_FILE
       # Now display information for local block devices i.e. USB drives, etc.
-      # Get df column header line.
-      echo "LOCAL BLOCK DEVICES      SIZE   USED    USE% AVAIL MOUNTED ON" >>$TEMP_FILE
+      # Column header line corresponding to findmount --output parameter.
+      echo "NAME SIZE USED USE% AVAIL FSTYPE MOUNT-POINT" >$TEMP_FILE_2
       #
       # Get /media/ local devices mount-points.
-      findmnt --all --df --output=source,size,used,use%,avail,target | grep -e /media/ -e /md >>$TEMP_FILE
+      findmnt --all --df --output=source,size,used,use%,avail,fstype,target | grep -e /media/ -e /md >>$TEMP_FILE_2
       ERROR=$?
       #
+      # Change device name from "/dev/sdxx" to "sdxx" for the output.
+      sed -i 's|/dev/sd|sd|' $TEMP_FILE_2
       # Are there any local block devices mounted on /media/?
       if [ $ERROR -eq 1 ] ; then
          # No, local block devices not mounted.
-         echo "N/A                      N/A    N/A     No local block devices mounted" >>$TEMP_FILE
-         echo >>$TEMP_FILE
+         echo "N/A N/A N/A N/A N/A N/A No-local-block-devices-mounted" >>$TEMP_FILE_2
+         echo >>$TEMP_FILE_2
       fi
+      #
+      # Make pretty display.
+      column --table $TEMP_FILE_2 >>$TEMP_FILE
       #
       echo >>$TEMP_FILE
       echo "-------------------------------------------------------------------------------" >>$TEMP_FILE
@@ -1841,41 +1924,34 @@ f_show_mount_points () {
       # using the lsblk command with only necessary columns displayed.
       #
       # Print column header line
-      # awk 'BEGIN { print "DEVICE  SIZE   FSTYPE             MOUNTPOINT" }' >>$TEMP_FILE
-      echo " NAME   SIZE      USED     USE%   AVAIL    FSTYPE   MOUNTPOINT" >>$TEMP_FILE
-      #
-      # Create $TEMP_FILE2.
-      TEMP_FILE2=$TEMP_FILE"_2.txt"
-      if [ -e $TEMP_FILE2 ] ; then
-         rm $TEMP_FILE2
-      fi
+      echo "NAME SIZE USED USE% AVAIL FSTYPE MOUNT-POINT" >$TEMP_FILE_2
       #
       # Print filtered results of command lsblk.
       # Use --tree to relate RAID md devices to RAID member drive devices.
       #
       # Easier to read information on RAID devices.
       # Include --output HOTPLUG to indicate USB devices.
-      lsblk -fs --tree --output HOTPLUG,NAME,SIZE,FSUSED,FSUSE%,FSAVAIL,FSTYPE,MOUNTPOINT,VENDOR,REV,MODEL | grep -e "sd[a-z][1-9]" -e md | awk  '{ printf "%-1s %-7s %-6s %-8s %-6s %-8s %-4s %-6s %-20s %s\n", $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11 }' >>$TEMP_FILE2
+      lsblk -fs --tree --output HOTPLUG,NAME,SIZE,FSUSED,FSUSE%,FSAVAIL,FSTYPE,MOUNTPOINT,VENDOR,REV,MODEL | grep -e "sd[a-z][1-9]" -e md | awk  '{ printf "%-1s %-7s %-6s %-8s %-6s %-8s %-4s %-6s %-20s %s\n", $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11 }' >$TEMP_FILE_3
       #
-      # Create $TEMP_FILE3.
-      TEMP_FILE3=$TEMP_FILE"_3.txt"
-      if [ -e $TEMP_FILE3 ] ; then
-         rm $TEMP_FILE3
+      # Does TEMP_FILE_3 have contents?
+      if [ ! -s "$TEMP_FILE_3" ] ; then
+         # No contents.
+         echo "N/A N/A N/A N/A N/A N/A No-local-block-devices-mounted" >>$TEMP_FILE_2
+      else
+         # Yes some contents.
+         # Filter out non-USB devices.
+         while read LINE
+               do
+                   # Is the $LINE a USB device? The first column "HOTPLUG" is 1.
+                   if [ $(echo $LINE | awk '{print $1}') -eq 1 ] ; then
+                      # Yes, so print the $LINE without the first column.
+                      echo $LINE | awk '{$1=""; printf "%-0s %-6s %-9s %-8s %-6s %-8s %-8s %s\n", $1,$2,$3,$4,$5,$6,$7,$8,$9 }' >> $TEMP_FILE_2
+                   fi
+               done < $TEMP_FILE_3
       fi
       #
-      # Filter out non-USB devices.
-      while read LINE
-            do
-                # Is the $LINE a USB device? The first column "HOTPLUG" is 1.
-                if [ $(echo $LINE | awk '{print $1}') -eq 1 ] ; then
-                   # Yes, so print the $LINE without the first column.
-                   echo $LINE | awk '{$1=""; printf "%-0s %-6s %-9s %-8s %-6s %-8s %-8s %s\n", $1,$2,$3,$4,$5,$6,$7,$8,$9 }' >> $TEMP_FILE3
-
-                fi
-            done < $TEMP_FILE2
-      #
-      # Rename $TEMP_FILE2.
-      cat $TEMP_FILE3 >> $TEMP_FILE
+      # Make pretty display.
+      column --table $TEMP_FILE_2 >>$TEMP_FILE
       #
       # Display results.
       case $2 in
@@ -2043,7 +2119,7 @@ f_file_manager () {
 # |         Function f_text_editor         |
 # +----------------------------------------+
 #
-#     Rev: 2024-06-13
+#     Rev: 2024-12-19
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - String "[Description of] File(s)"
 #                  (String must either begin and end with double-quotes
@@ -2051,9 +2127,9 @@ f_file_manager () {
 #          $3 - Default directory.
 #          $4 - [OPTIONAL] File name.
 #          $5 - [OPTIONAL] Foreground/Background process flag.
-#                          null (Default) - Run file manager as a foreground process.
-#                          1              - Run file manager as a foreground process.
-#                          2              - Run file manager as a Background process.
+#                          null (Default) - Run text editor as a foreground process.
+#                          1              - Run text editor as a foreground process.
+#                          2              - Run text editor as a Background process.
 #          THIS_DIR, THIS_FILE.
 #    Uses: RUNAPP
 # Outputs: ERROR.
@@ -2066,7 +2142,7 @@ f_text_editor () {
       #
       FILE_TXT=""
       #
-      if [ -e "$4" ] ; then
+      if [ -e "$3/$4" ] ; then
          ANS=$4
       else
          f_select_file $1 "$2" $3
@@ -2119,11 +2195,11 @@ f_text_editor () {
          if [ -z $XWIN ] ; then
             # Yes, a pure CLI environment so use only CLI file manager apps.
             # List file managers in preferred order with most preferred first.
-            TEXT_EDITOR_APPS="nano jed joe emacs micro ed vim vi"
+            TEXT_EDITOR_APPS="jed joe nano emacs micro ed vim vi"
          else
             # No, it is an X-Window environment so can use both X-Window and CLI file manager apps.
             # List file managers in preferred order with most preferred first.
-            TEXT_EDITOR_APPS="xed gedit kedit pluma mousepad"
+            TEXT_EDITOR_APPS="xed gedit kedit kwrite kate geany pluma mousepad"
          fi
          #
          for TEXT_EDITOR in $TEXT_EDITOR_APPS
@@ -2137,13 +2213,13 @@ f_text_editor () {
                       #
                       # Run application $TEXT_EDITOR to open document $FILE_TEXT.
                       #
-                      # Run text editor as a foreground process?
+                      # Run text editor as a background process?
                       if [ "$5" = 2 ] ; then
-                         # No, run in background.
-                         $TEXT_EDITOR $FILE_TXT &
+                         # Yes, run in background.
+                         $TEXT_EDITOR $3/$FILE_TXT &
                       else
-                         # Yes, run in foreground.
-                         $TEXT_EDITOR $FILE_TXT
+                         # No, run in foreground.
+                         $TEXT_EDITOR $3/$FILE_TXT
                       fi
                       #
                       ERROR=$?
@@ -2171,8 +2247,8 @@ f_text_editor () {
 # |          Function f_web_browser        |
 # +----------------------------------------+
 #
-#     Rev: 2023-08-07
-#  Inputs: $1=GUI
+#     Rev: 2024-07-15
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #    Uses: WEB_BROWSER_FOUND, WEB_BROWSER_APPS.
 # Outputs: WEB_BROWSER, RUNAPP, ERROR.
 #
@@ -2272,7 +2348,7 @@ f_web_browser () {
 # |          Function f_select_dir         |
 # +----------------------------------------+
 #
-#     Rev: 2023-12-29
+#     Rev: 2024-06-27
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - String "[Description] Directory".
 #                  (String must either begin and end with double-quotes
@@ -2287,9 +2363,12 @@ f_web_browser () {
 #    Uses: TEMP_FILE2, ANS, ERROR, SCRIPT_LIST.
 # Outputs: ANS (List of selected directories delimited by spaces)
 #              Note: A selected directory does not include a trailing "/" forward-slash.
-#          ERROR.
 #
-# Summary: Prompt user-entered file name.
+#          !!! ERROR flag does not mean success or failure for this function !!!
+#              Test the $ANS string for success or failure.
+#
+# Summary: Prompt user-entered directory name.
+#
 #
 # Dependencies: f_yn_question, f_message.
 #
@@ -2317,6 +2396,7 @@ f_select_dir () {
               # Initialize variables.
               DIR_SELECTED=""
               ANS=""
+              DIR_OK="N"
               #
               # Reset ERROR for while-loop to work.
               ERROR=0
@@ -2398,6 +2478,12 @@ f_select_dir () {
                        #
                        # Confirm directory selection.
                        f_select_dir_verify $1 "$DIR_DESCR" "$DIR_SELECTED" "$3" "$4"
+                       # Outputs DIR_OK="Y"/"N".
+                       # Outputs ERROR=1 (to escape while-loop).
+                       #
+                       if [ "$DIR_OK" = "N" ] ; then
+                          DIR_SELECTED=""
+                       fi
                     done
               #
               # Reset ERROR since on exiting WHILE-loop it will always be EXIT=1.
@@ -2468,6 +2554,11 @@ f_select_dir () {
                           #
                           # Confirm directory selection.
                           f_select_dir_verify $1 "$DIR_DESCR" "$DIR_SELECTED" "$DEFAULT_DIR" $4
+                          # Outputs DIR_OK="Y"/"N".
+                          # Outputs ERROR=1 always to exit this while-loop.
+                          if [ "$DIR_OK" = "N" ] ; then
+                             DIR_SELECTED=""
+                          fi
                        done
                  #
                  # Reset ERROR since on exiting WHILE-loop it will always be EXIT=1.
@@ -2530,7 +2621,7 @@ f_select_dir () {
 # |        Function f_select_dir_fzf       |
 # +----------------------------------------+
 #
-#     Rev: 2023-12-29
+#     Rev: 2024-06-27
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - String "[Description] Directory".
 #                  (String must either begin and end with double-quotes
@@ -2581,6 +2672,7 @@ f_select_dir_fzf () {
                         f_select_dir_verify $1 "$2" "$DIR_SELECTED" "$3" "$4"
                         # Outputs TEMP_FILE2 which has a list of selected file names in a single column.
                         # Outputs ERROR=1 if selecting only 1 directory (not multiple directories).
+                        # Outputs DIR_OK="Y"/"N".
                      fi
                   else
                      DIR_OLD=$DIR_SELECTED
@@ -2607,7 +2699,7 @@ f_select_dir_fzf () {
 #                  (String must either begin and end with double-quotes
 #                  or must have underscores substituting for spaces).
 #                  !!! String cannot be longer than 28 characters !!!
-#          $3 - Selected directory.
+#          $3 - [OPTIONAL] Selected directory.
 #          $4 - Original Default directory.
 #          $5 - [OPTIONAL] to select one or more directories.
 #                          null (Default) - Select multiple directories.
@@ -2621,7 +2713,19 @@ f_select_dir_fzf () {
 #                                DIR1/FILE1
 #                                DIR2/FILE2
 #                                DIR3/FILE3
-#          ERROR.
+#          ANS=0 is "Yes", directory name is correct
+#          ANS=1 is "No", bad directory name or mkdir command failed.
+#          ANS=255 if <Esc> is pressed in dialog/whiptail --yesno box.
+#
+#          DIR_OK - "Y" or "N" success or failure of directory picked.
+#                   Success or failure cannot be determined by ANS since
+#                   it may be overwritten and ERROR is used to exit any
+#                   external while-loops which may call f_select_dir_verify.
+#
+#          !!! ERROR flag does not mean success or failure for this function !!!
+#              Test the $DIR_OK string for success or failure.
+#              Test the file contents of $TEMP_FILE2 for success or failure.
+#
 #
 # Summary: Used in f_select_dir while-loop. Confirm a directory exists or if not create it.
 #
@@ -2632,6 +2736,8 @@ f_select_dir_verify () {
       # Initialize variables.
       DIR_DESCR=$2
       DIR_SELECTED=$3
+      ERROR=0
+      DIR_OK="N"
       #
       case $1 in
            dialog)
@@ -2640,7 +2746,7 @@ f_select_dir_verify () {
                  f_yn_question $1 "Y" "Confirm $DIR_DESCR name" "$DIR_DESCR name:\n$DIR_SELECTED\n\nIs the $DIR_DESCR name correct?"
                  #
                  # Is the selected directory name correct?
-                 if [ "$ANS" != "1" ] ; then
+                 if [ "$ANS" -eq 0 ] ; then
                     # Yes, $DIR_SELECTED name is correct.
                     #
                     # Does the directory exist?
@@ -2661,6 +2767,8 @@ f_select_dir_verify () {
                           # No, multiple directories can be selected, so continue.
                           f_message $1 "NOK" "Directory Entered" "Directory name accepted. Enter next directory name or press \"Done choosing\" button.\n\n$3" 2
                        fi
+                       # Set DIR_OK flag to indicate success.
+                       DIR_OK="Y"
                     else
                        # No, $3 does not exist. Create new directory?
                        f_yn_question $1 "N" "Error Directory Missing" "Directory does not exist:\n\nDo you want to create a new empty directory?\n\n$3"
@@ -2673,22 +2781,43 @@ f_select_dir_verify () {
                           if [ $ERROR -ne 0 ] ; then
                              # Error creating directory.
                              f_message $1 "OK" "Error Creating Directory" "Directory $2 cannot be created without sudo permissions.\n\nDirectory is missing:\n\n$3"
+                             # Set DIR_OK flag to indicate error.
+                             DIR_OK="N"
+                             # so exit while-loop by setting ERROR=1.
+                             ERROR=1
                           else
                              # Add selected directory to list of selected directories in TEMP_FILE2
                              # Delete any trailing forward slash.
                              DIR_SELECTED=$(echo $DIR_SELECTED | sed 's|\/$||')
-                             #
                              echo $DIR_SELECTED >> $TEMP_FILE2
+                             # Set DIR_OK flag to indicate success.
+                             DIR_OK="Y"
                           fi
                        else
                           # No, do not create directory.
                           f_message $1 "OK" "Directory not created" "New directory not created.\n\n$3"
+                          # Set DIR_OK flag to indicate error.
+                          DIR_OK="NO"
+                          # so exit while-loop by setting ERROR=1.
+                          ERROR=1
                        fi
                     fi
+                 else
+                    # No, the directory selected is not correct.
+                    # The user answered that the directory name is not correct.
+                    # Set DIR_OK flag to indicate error.
+                    DIR_OK="N"
+                    # so exit while-loop by setting ERROR=1.
+                    ERROR=1
                  fi
-                 # No, the $DIR_SELECTED is not correct.
+              else
+                 # No, the directory selected is not correct.
+                 # Selected directory is null.
+                 # Set DIR_OK flag to indicate error.
+                 DIR_OK="N"
+                 # so exit while-loop by setting ERROR=1.
+                 ERROR=1
               fi
-              # No, a directory was not selected.
            ;;
            whiptail | text)
               # Was any directory selected?
@@ -2696,7 +2825,7 @@ f_select_dir_verify () {
                  f_yn_question $1 "Y" "Confirm $DIR_DESCR name" "$DIR_DESCR name:\n$DIR_SELECTED\n\nIs the $DIR_DESCR name correct?"
                  # Yes, a directory was selected.
                  # Is the selected directory name correct?
-                 if [ "$ANS" != "1" ] ; then
+                 if [ "$ANS" -eq 0 ] ; then
                     # Yes, $DIR_SELECTED is correct.
                     #
                     # Does the selected directory name exist?
@@ -2707,19 +2836,28 @@ f_select_dir_verify () {
                        #
                        echo $DIR_SELECTED >> $TEMP_FILE2
                        #
+                       # Set DIR_OK flag to indicate sucess.
+                       DIR_OK="Y"
+
                        f_message $1 "NOK" "Directory Confirmed" "Directory name accepted.\n\n$DIR_SELECTED\n\n" 2
                     else
                        # No, $DIR_SELECTED does not exist.
                        f_message $1 "OK" "Error Directory Missing" "Directory does not exist:\n\n$DIR_SELECTED"
+                       #
+                       # Set DIR_OK flag to indicate error.
+                       DIR_OK="N"
                     fi
                  else
                     # No, the $DIR_SELECTED is not correct.
                     # Force "fzf" to start over using the original default directory as the parent directory.
                     DIR_OLD=$4
                     DEFAULT_DIR=$4
+                    # Set DIR_OK flag to indicate error.
+                    DIR_OK="N"
                  fi
-                 # No, a directory was not selected.
               fi
+              #
+              # If a directory was not selected. Do nothing and continue.
               #
               # Only select a single directory?
               if [ "$5" = 1 ] ; then
@@ -2730,7 +2868,7 @@ f_select_dir_verify () {
                  # No, multiple directories can be selected, so continue.
                  f_yn_question $1 "Y" "Continue Selecting" "Select another directory?"
                  #
-                 if [ "$ANS" = 1 ] ; then
+                 if [ "$ANS" -eq 1 ] ; then
                     # No, done selecting directories.
                     # Force exit out of while-loop.
                     ERROR=1
@@ -2750,7 +2888,7 @@ f_select_dir_verify () {
 # |         Function f_select_file         |
 # +----------------------------------------+
 #
-#     Rev: 2023-12-29
+#     Rev: 2024-06-27
 #  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - String "[Description] File(s)".
 #                  (String must either begin and end with double-quotes
@@ -2764,7 +2902,9 @@ f_select_dir_verify () {
 #          THIS_DIR, THIS_FILE.
 #    Uses: TEMP_FILE, ANS, ERROR, SCRIPT_LIST.
 # Outputs: ANS (List of selected files delimited by spaces: "DIR1/FILE1 DIR2/FILE2 DIR3/FILE3...")
-#          ERROR.
+#          !!! ERROR flag does not mean success or failure for this function !!!
+#              Test the $ANS string for success or failure.
+
 #
 # Summary: Prompt user-entered file name.
 #          Dialog UI uses "dialog --fselect".
@@ -2879,7 +3019,7 @@ f_select_file () {
                        #
                        # Verify each file selected $FILE_SELECTED and append to file TEMP_FILE2.
                        f_select_file_verify $1 "$FILE_DESCR" "$DEFAULT_DIR" "$FILE_SELECTED" $4
-                       # Outputs TEMP_FILE2 which has a list of file names in a single column.
+                       # Outputs: TEMP_FILE2 which has a list of file names in a single column.
                     done
               #
               # Reset ERROR since on exiting WHILE-loop it will always be EXIT=1.
@@ -3039,7 +3179,7 @@ f_select_file_verify () {
          f_yn_question $1 "Y" "Confirm $FILE_DESCR name" "$FILE_DESCR name:\n$FILE_SELECTED\n\nIs the $FILE_DESCR name correct?"
          #
          # Is the selected file name correct?
-         if [ "$ANS" -ne 1 ] ; then
+         if [ "$ANS" -eq 0 ] ; then
             # Yes, $FILE_SELECTED name is correct. Note: $FILE_SELECTED includes "Directory/File Name".
             #
             # Does the file exist?
@@ -3084,6 +3224,7 @@ f_select_file_verify () {
                fi
             fi
          fi
+         # file name is not correct.
       fi
       #
 }  # End of function f_select_file_verify.
@@ -3112,7 +3253,6 @@ f_select_file_verify () {
 #          THIS_DIR, THIS_FILE.
 #    Uses: TEMP_FILE2, TEMP_FILE3.
 # Outputs: ANS (List of selected files delimited by spaces: "DIR1/FILE1 DIR2/FILE2 DIR3/FILE3...")
-#          ERROR.
 #
 # Summary: Prompt user-entered file name.
 #
@@ -3192,18 +3332,6 @@ f_select_file_output () {
          # Yes, Cancel button pressed.
          ANS=""
       fi
-      #
-      # Reset ERROR since on exiting WHILE-loop it will always be EXIT=1.
-      ERROR=0
-      #
-      # clear                           # Diagnostic line.
-      # echo "Diagnostics display $4"   # Diagnostic line.
-      # cat $4                          # Diagnostic line.
-      # echo                            # Diagnostic line.
-      # echo ----                       # Diagnostic line.
-      # echo "Diagnostics display ANS"  # Diagnostic line.
-      # echo $ANS                       # Diagnostic line.
-      # read X                          # Diagnostic line.
       #
       if [ -e "$4" ] ; then
          rm $4
@@ -5081,8 +5209,8 @@ f_update_menu_gui () {
 # | Function f_menu_main_all_menus_TEMPLATE          |
 # +-----------------------------------------+
 #
-#     Rev: 2024-02-18
-#  Inputs: $1 - "text", "dialog" or "whiptail" the preferred user-interface.
+#     Rev: 2024-07-17
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - MENU_TITLE Title of menu which must also match the header
 #               and tail strings for the menu data in the ARRAY_SOURCE_FILE.
 #              !!!Menu title MUST use underscores instead of spaces!!!
@@ -5101,7 +5229,7 @@ f_update_menu_gui () {
 #          Simply state the Path/Filename of the library file, ARRAY_SOURCE_FILE
 #          which contains the menu data.
 #
-# Dependencies: f_menu_arrays, f_create_show_menu.
+# Dependencies: f_menu_arrays, f_create_a_menu.
 #
 # PLEASE NOTE: RENAME THIS FUNCTION WITHOUT SUFFIX "_TEMPLATE" AND COPY
 #              THIS FUNCTION INTO THE MAIN SCRIPT WHICH WILL CALL IT.
@@ -5486,7 +5614,7 @@ f_create_menu () {
 # |          Function f_menu_make          |
 # +----------------------------------------+
 #
-#  Inputs: $1 - GUI - "dialog" or "whiptail" The CLI GUI application in use.
+#  Inputs: $1 - "text", "dialog" or "whiptail" the command-line user-interface in use.
 #          $2 - Menu title string to use with grep to find correct menu items.
 #          $3 - ARRAY_FILE name (Temporary file) includes menu items imported from $ARRAY_SOURCE_FILE of a single menu.
 #          $4 - ARRAY_SOURCE_FILE name (Not a temporay file) includes menu items from multiple menus.
@@ -5640,6 +5768,86 @@ f_mount () {
       unset USERNAME_DEFAULT
       #
 }  # End of function f_mount.
+#
+# +----------------------------------------+
+# |            Function f_mount_loop       |
+# +----------------------------------------+
+#
+#  Inputs: $1=GUI - "dialog" or "whiptail" The CLI GUI application in use.
+#          $2=Share-point.
+#          $3=Mount-point.
+#          $4=[OPTIONAL] SMBUSER  (smb username).
+#    Uses: QUIT.
+# Outputs: ERROR.
+#
+# Summary: Test if Mount-point is mounted, if not then try to mount file
+#          server share-point directory using Samba and CIFS.
+#          If it still fails to mount, then try a different username/password
+#          again until user quits until-loop or the mount is successful.
+#
+# Dependencies: f_message, f_mount (in common_bash_function.lib).
+#
+f_mount_loop () {
+      #
+      # QUIT=1 quits until-loop, QUIT=0 until-loop
+      QUIT=0
+      #
+      # Set SMBUSER and PASSWORD since if fails to mount,
+      # then user can change their value.
+      SMBUSER="$4"
+      TEMP_FILE=$THIS_FILE"_temp.txt"
+      #
+      until [ $QUIT -eq 1 ]
+            do
+               f_mount $1 $2 $3 $4
+               if [ $ERROR -eq 0 ] ; then
+                  # Directory is already mounted.
+                  # Quit Until-loop.
+                  QUIT=1
+                  if [ -s $TEMP_FILE ] ; then
+                     # File $TEMP_FILE contains error message, so display it.
+                     f_message $1 "OK" "Directory Previously Mounted" $TEMP_FILE
+                  fi
+               else
+                  # Directory is not mounted yet.
+                  echo >>$TEMP_FILE
+                  echo "Failed to mount" >$TEMP_FILE2
+                  echo "Share-point: $2" >>$TEMP_FILE2
+                  echo "onto" >>$TEMP_FILE2
+                  echo "Mount-point: $3" >>$TEMP_FILE2
+                  echo >>$TEMP_FILE2
+                  cat $TEMP_FILE >>$TEMP_FILE2
+                  mv $TEMP_FILE2 $TEMP_FILE
+                  f_message $1 "OK" "Error Mounting Sharepoint" $TEMP_FILE
+                  #
+                  # Ask if try again or quit.
+                  # Outputs user response to $ANS.
+                  echo -e "Mount using Samba failed. Are \"samba\" and \"cifs-utils\" installed?"
+                  f_yn_question $1 "Y" "Failed to mount" "Mount using Samba failed. Are \"samba\" and \"cifs-utils\" installed?\n\nFailed to mount\nShare-point: $2\nonto\nMount-point: $3\n\nTry again to mount $2?"
+                  if [ $ANS -eq 0 ] ; then
+                     # Yes, Try again.
+                     QUIT=0  # Do not quit Until-loop.
+                  else
+                     # No, do not try another password just return to previous menu. Exit loop.
+                     # Quit Until-loop, return to previous menu.
+                     QUIT=1
+                  fi
+               fi
+               #
+            done
+      #
+      if [ -r  $TEMP_FILE ] ; then
+         rm  $TEMP_FILE
+      fi
+      #
+      if [ -r  $TEMP_FILE2 ] ; then
+         rm  $TEMP_FILE2
+      fi
+      #
+      # Throw out this variable.
+      unset QUIT
+      #
+} # End of function f_mount_loop.
 #
 # +----------------------------------------+
 # |              f_download_file           |

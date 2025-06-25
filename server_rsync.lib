@@ -23,7 +23,8 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-06-25 23:32"
+VERSION="2025-06-14 14:59"
+LOCAL_PC_NAME=$(cat /etc/hostname)
 #
 # Commented out THIS_FILE since it will conflict other scripts which
 # use this library.
@@ -120,7 +121,7 @@ VERSION="2024-06-25 23:32"
 #
 #@@Version Update#@@Check for updates to this script and download.#@@f_check_version^$GUI
 #
-#@@Help Dir Trees#@@Display Source/Back-up directory trees.#@@f_help_directory_diagrams^$GUI
+#@@Help Dir Trees#@@Display Source/BACKUP directory trees.#@@f_help_directory_diagrams^$GUI
 #
 #@@Help#@@Display help message.#@@f_help_message^$GUI
 #
@@ -247,23 +248,23 @@ f_check_version () {
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #    Uses: TFSTAMP
-# Outputs: SOURCE_DIR, TARGET_DIR, SOURCE_DIR_STR_NAME, TARGET_DIR_STR_NAME, TARGET_FILESYSTEM, LOG_FILE.
+# Outputs: SOURCE_DIR, BACKUP_DIR, SOURCE_DIR_STR_NAME, BACKUP_DIR_STR_NAME, BACKUP_FILESYSTEM, LOG_FILE.
 #
-# Summary: Select Source and Target directories. Create log file name.
+# Summary: Select SOURCE and BACKUP directories. Create log file name.
 #
 # Dependencies: f_any_select f_go_nogo_rsync.
 #
 f_any () {
       #
-      # Source directory name does not end with a forward-slash (/).
-      # Target directory name must end in forward-slash (/).
+      # SOURCE directory name does not end with a forward-slash (/).
+      # BACKUP directory name must end in forward-slash (/).
       #
-      # This script allows for a single one-way rsync back-up.
+      # This script allows for a single one-way rsync BACKUP.
       #
       #
-      # Diagram of Source and Back-up directory trees below:
+      # Diagram of Source and BACKUP directory trees below:
       #
-      #   Source Directory           Back-up Directory
+      #   Source Directory           BACKUP Directory
       #
       #   /home/[sharename]          /parent-dir/server_rsync
       #      |--file01                  +--/[hostname of source server]
@@ -275,41 +276,38 @@ f_any () {
       #
       # Select SOURCE_DIR.
       f_any_select $1 "Source"
+      #
       ERROR=$?
       #
       if [ "$ERROR" -eq 0 ] && [ -n "$SOURCE_DIR" ] ; then
-         # Explore TARGET_DIR to find last server_rsync log file
-         # so that you may over-write the oldest TARGET_DIR backup.
-         f_fzf $1
+         # Select BACKUP_DIR.
+         f_any_select $1 "Backup"
          #
-         # Select TARGET_DIR.
-         f_any_select $1 "Target"
-         #
-         case $TARGET_DIR in
+         case $BACKUP_DIR in
               $SOURCE_DIR)
-                 f_message $1 "OK" "Invalid Target directory" "Target directory is the same as the Source directory, returning to MAIN menu."
+                 f_message $1 "OK" "Invalid Backup directory" "Backup directory is the same as the Source directory, returning to MAIN menu."
               ;;
               *)
-                 # Add detection of filesystem of TARGET directory and set variable TARGET_FILESYSTEM accordingly.
+                 # Add detection of filesystem of Backup directory and set variable BACKUP_FILESYSTEM accordingly.
                  # Or create either string input or menu choice for user to manually indicate the filesystem.
                  # This code will detect the filesystem of mounted devices.
                  # "lsblk --list --output name,fstype,mountpoint"
                  #
-                 # TARGET_FILESYSTEM is the file system of the backup media (i.e. linux, FAT, NTFS),
+                 # BACKUP_FILESYSTEM is the file system of the backup media (i.e. linux, FAT, NTFS),
                  # used to determine the best rsync options for that file system.
                  #
-                 # Find the filesystem used by the TARGET_DIR.
-                 TARGET_FILESYSTEM=$(findmnt --noheadings --target $TARGET_DIR | awk '{ print $3 }')
+                 # Find the filesystem used by the BACKUP_DIR.
+                 BACKUP_FILESYSTEM=$(findmnt --noheadings --target $BACKUP_DIR | awk '{ print $3 }')
                  #
                  # Create SOURCE_DIR_STR_NAME; Get source directory and substitute "_" for "/".
                  SOURCE_DIR_STR_NAME=$(echo $SOURCE_DIR | sed -e 's|/|_|g' -e 's|_$||g')
                  #
                  # SOURCE_DIR_STR_NAME now begins with an underscore.
                  #
-                 # Create TARGET_DIR_STR_NAME; Get source directory and substitute "_" for "/" and precede with "_".
-                 TARGET_DIR_STR_NAME=$(echo $TARGET_DIR | sed -e 's|/|_|g' -e 's|_$||g')
+                 # Create BACKUP_DIR_STR_NAME; Get source directory and substitute "_" for "/" and precede with "_".
+                 BACKUP_DIR_STR_NAME=$(echo $BACKUP_DIR | sed -e 's|/|_|g' -e 's|_$||g')
                  #
-                 # TARGET_DIR_STR_NAME now now begins with an underscore
+                 # BACKUP_DIR_STR_NAME now now begins with an underscore
                  #
                  # Create time stamp for Log File name.
                  TFSTAMP=$(date --date=now +"%Y-%m-%d_%H%M.%S")
@@ -319,17 +317,34 @@ f_any () {
                  SERVER_RSYNC_LOG_FILE="rsync_server_FROM_PC_"$SOURCE_SERVER_NAME"_SHARE-POINT"$SOURCE_DIR_STR_NAME"_TIMESTAMP_$TFSTAMP.log"
                  #
                  # Proceed with rsync procedure.
-                 f_go_nogo_rsync $1 "$SOURCE_DIR" "$TARGET_DIR" "$SERVER_RSYNC_LOG_FILE" "$SOURCE_SERVER_NAME" "$TARGET_SERVER_NAME"
+                 f_go_nogo_rsync $1 "$SOURCE_DIR" "$BACKUP_DIR" "$SERVER_RSYNC_LOG_FILE" "$SOURCE_SERVER_NAME" "$BACKUP_SERVER_NAME"
                  #
                  unset TFSTAMP
                  ;;
          esac
-      #else
-         # Error selecting Source Directory.
-         # If [ $ERROR -ne 0 ] then an error message is displayed by f_any_select -> f_source_target_selected -> f_select_dir.
-         # So no need for another error message here.
       fi
       #
+      # Delete temporary file.
+      if [ -e $TEMP_FILE"_directory_menu.txt" ] ; then
+         rm $TEMP_FILE"_directory_menu.txt"
+      fi
+      #
+      # Delete temporary file.
+      if [ -e $TEMP_FILE"_directory_menu_2.txt" ] ; then
+         rm $TEMP_FILE"_directory_menu_2.txt"
+      fi
+      #
+      # Delete temporary file.
+      if [ -e server_rsync.sh_temp.txt_last_log.txt ] ; then
+         rm server_rsync.sh_temp.txt_last_log.txt
+      fi
+      #
+      # Delete temporary file.
+      if [ -e server_rsync.sh_temp.txt_UUID_alias.txt ] ; then
+         rm server_rsync.sh_temp.txt_UUID_alias.txt
+      fi
+      #
+
 } # End of function f_any
 #
 # +----------------------------------------+
@@ -337,93 +352,179 @@ f_any () {
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#          $2 - "Source", "Target".
+#          $2 - "Source", "Backup".
 #    Uses: X, Y.
-# Outputs: ERROR, LOCAL_SERVER_NAME,
+# Outputs: ERROR, LOCAL_DIR, LOCAL_SERVER_NAME,
 #          SOURCE_DIR, SOURCE_SERVER_NAME,
-#          TARGET_DIR, TARGET_SERVER_NAME.
+#          BACKUP_DIR, BACKUP_SERVER_NAME.
 #
-# Summary: Select Source/Target directory using a dynamic menu of mounted
+# Summary: Select Source/Backup directory using a dynamic menu of mounted
 #          devices that changes according to the devices mounted on PC at
 #          mount-points "/mnt" and "/media" directories.
 #
-# Dependencies: None.
+#          Change UUIDs to friendlier, easy to remember names for mounted devices.
+#
+# Dependencies: f_last_log_date, f_UUID_truncate, f_menu_arrays, f_menu_main_all_menus.
 #
 f_any_select () {
       #
-      # Create Source/Target Directory Menu which is a dynamic menu of mounted
+      # Create Source/Backup Directory Menu which is a dynamic menu of mounted
       # devices that changes according to the devices mounted on PC at
       # mount-points "/mnt" and "/media" directories.
       #
       TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
       #
-      ERROR=0
-      # Get /mnt/ file server mount-points
-      # Delete the forward-slashes in the first column of the  menu items using "Sed" to make the menu look better.
-      df --all --human-readable | grep -e /mnt/ -e /media | awk '{ printf "%-28s %s\n", $6,$1 }' | sed -e 's|^/||g' > $TEMP_FILE"_directory_menu.txt"
+      #-------------------------------------------------------------------
+      # Use "findmnt" command to build the Source/Backup Directory Menu.
+      # Include both --type cifs and --type ext4 file systems in the list.
+      #-------------------------------------------------------------------
       #
-      # Set DIRSEL to "Source" or "Target" used only for the "awk" statement.
+      # Include any Samba file (cifs) share-points.
+      findmnt --list --type cifs --noheadings --output SOURCE,SIZE,USE%,AVAIL,FSTYPE,TARGET > $TEMP_FILE"_directory_menu.txt"
+      #
+      # Include any attached devices (ext4) sda, sdb, sdc, sdd.
+      findmnt --list --type ext4 --noheadings --output UUID,SIZE,USE%,AVAIL,FSTYPE,TARGET >> $TEMP_FILE"_directory_menu.txt"
+      #
+      ERROR=0
+      #
+      #-------------------------------------------------------------------
+      # Insert name of Local PC
+      #-------------------------------------------------------------------
+      #
+      # awk prints literal string, "$LOCAL_PC_NAME" and sed substitutes the literal string for the actual local PC name.
+      NEW_LINE=$(grep "/"$ $TEMP_FILE"_directory_menu.txt" | awk '{ print "$LOCAL_PC_NAME "$2" "$3" "$4" "$5" "$6 }' | sed "s/\$LOCAL_PC_NAME/$LOCAL_PC_NAME/")
+      # sed substitute the line ending with "/" with the new line with actual local PC name.
+      sed -i "/\/$/c $NEW_LINE" $TEMP_FILE"_directory_menu.txt"
+      #
+      #-------------------------------------------------------------------
+      # Set DIRSEL to "Source" or "Backup".
+      # $DIRSEL is used both in the "awk" command and Directory Menu name.
+      # i.e. "Source Directory Menu" or "Backup Directory Menu".
+      #-------------------------------------------------------------------
+      #
       DIRSEL=$2
       #
-      # Insert field marker "#@@" that the menu will use to format data.
-      # When a menu item is selected, run function f_source_target_selected^$GUI^<selected menu item>
-      awk '{ print "#@@"$1"#@@"$2"#@@f_source_target_selected^$GUI^$DIRSEL^"$1 }' $TEMP_FILE"_directory_menu.txt" > $TEMP_FILE"_directory_menu2.txt"
+      #-------------------------------------------------------------------
+      # Start creating the menu item lines field delimited by "#@@".
+      #-------------------------------------------------------------------
       #
-      # Put double-quotes around the 2nd phrase delimited by "#@@" which contains the mount point directory.
-      # The forward-slashes (/) in the directory may mess up the creation of the data array for the menu by f_menu_arrays.
-      sed -i -e 's|#@@|&"|2' -e 's|#@@|"&|3' $TEMP_FILE"_directory_menu2.txt"
+      # Is the device a "Source" or "Backup"?
+      if [ "$DIRSEL" = "Source" ] ; then
+         # For Source devices, include Samba share-points (cifs).
+         # Insert field marker "#@@" that the menu will use to format data.
+         # When a menu item is selected, run function f_source_target_selected^$GUI^<selected menu item>
+         awk '{ print "#@@"$1"#@@"$2" "$3" "$4" "$5"#@@f_source_target_selected^$GUI^$DIRSEL^"$6 }' $TEMP_FILE"_directory_menu.txt" > $TEMP_FILE"_directory_menu_2.txt"
+      else
+         # For Back-up devices, include only attached devices (ext4).
+         # Insert field marker "#@@" that the menu will use to format data.
+         # When a menu item is selected, run function f_source_target_selected^$GUI^<selected menu item>
+         SOURCE_DIR_BASE=$(basename $SOURCE_DIR)
+         awk '{ print "#@@"$1"#@@"$2" "$3" "$4" "$5"#@@f_source_target_selected^$GUI^$DIRSEL^"$6"/server_rsync/$SOURCE_SERVER_NAME/$SOURCE_DIR_BASE" }' $TEMP_FILE"_directory_menu.txt" > $TEMP_FILE"_directory_menu_2.txt"
+      fi
       #
+      #-------------------------------------------------------------------
+      # Insert name of Local PC
+      #-------------------------------------------------------------------
+      #
+      sed -i "s/$LOCAL_PC_NAME\#@@/&Local_PC_/" $TEMP_FILE"_directory_menu_2.txt"
+      #
+      #-------------------------------------------------------------------
+      # Detect the line containing the root directory of this PC and
+      # correct the default directory to "/".
+      #-------------------------------------------------------------------
+      #
+      # Which the awk-statement will change it to $6"/server_rsync"
+      # resulting in "//server_rsync" which is an invalid directory name.
+      # Change any "//server_rsync" to "/" in Backup directory name.
+      # Sed change from literal string: "/server_rsync/$SOURCE_SERVER_NAME/"
+      #     change to   literal string: "/"
+      sed -i 's|//server_rsync/$SOURCE_SERVER_NAME/|/|g' $TEMP_FILE"_directory_menu_2.txt"
+      #
+      #-------------------------------------------------------------------
+      # Substitute UUIDs for Alias Names.
+      #-------------------------------------------------------------------
+      #
+      f_UUID_alias $1 $TEMP_FILE"_UUID_alias.txt"
+      #
+      #-------------------------------------------------------------------
+      # Insert UUID abbreviations for any UUID without UUID Alias.
+      # Substitute last 5 characters of UUID for full UUID.
+      # This makes it easier to read and to remember.
+      #-------------------------------------------------------------------
+      f_UUID_truncate $1 $TEMP_FILE"_directory_menu_2.txt"
+      #
+      #-------------------------------------------------------------------
+      # If applicable, insert the last back-up date of the device in the
+      # comment field of the menu item.
+      #-------------------------------------------------------------------
+      #
+      if [ "$DIRSEL" = "Backup" ] && [ "$SOURCE_DIR" = "/mnt/scotty/robert/" ] ; then
+         #-------------------------------------------------------------------
+         # Get the last Server Rsync log file from each back-up device.
+         # Extract the last date and device from the log file for robert data.
+         #-------------------------------------------------------------------
+         #
+         # Output is Device, Date of log file i.e. "sda1 2024-01-01_2359"
+         find /media/$USER/ -maxdepth 5 -name rsync_server_FROM_PC_scotty_SHARE-POINT_mnt_scotty_robert*.log 2>/dev/null | awk -F "/" '{ print $4" "$8" " }' | awk -F "." '{ print $1 }' | sed 's/_TIMESTAMP_/ /' | awk '{ print $1" "$3}' > $TEMP_FILE"_last_log.txt"
+         #
+         # Insert last date of log file into menu item.
+         f_last_log_date $1 $TEMP_FILE"_last_log.txt"
+      fi
+      #
+      #-------------------------------------------------------------------
+      # If applicable, insert the last back-up date of the device in the
+      # comment field of the menu item.
+      #-------------------------------------------------------------------
+      #
+      if [ "$DIRSEL" = "Backup" ] && [ "$SOURCE_DIR" = "/mnt/scotty/files/" ] ; then
+         #-------------------------------------------------------------------
+         # Get the last Server Rsync log file from each back-up device.
+         # Extract the last date and device from the log file for robert data.
+         #-------------------------------------------------------------------
+         #
+         # Output is Device, Date of log file i.e. "sda1 2024-01-01_2359"
+         find /media/$USER/ -maxdepth 5 -name rsync_server_FROM_PC_scotty_SHARE-POINT_mnt_scotty_files*.log 2>/dev/null | awk -F "/" '{ print $4" "$8" " }' | awk -F "." '{ print $1 }' | sed 's/_TIMESTAMP_/ /' | awk '{ print $1" "$3}' > $TEMP_FILE"_last_log.txt"
+         #
+         # Insert last date of log file into menu item.
+         f_last_log_date $1 $TEMP_FILE"_last_log.txt"
+      fi
+      #
+      #-------------------------------------------------------------------
       # Save output file to temp file.
-      mv $TEMP_FILE"_directory_menu2.txt" $TEMP_FILE"_directory_menu.txt"
+      #-------------------------------------------------------------------
+      mv $TEMP_FILE"_directory_menu_2.txt" $TEMP_FILE"_directory_menu.txt"
+      #
+      #-------------------------------------------------------------------
+      # Continue to create the menu item lines field delimited by "#@@".
+      #-------------------------------------------------------------------
       #
       # Insert the first menu option at the first line.
-      sed -i '1i #@@Exit#@@Return to previous menu.#@@break' $TEMP_FILE"_directory_menu.txt"
+      sed -i '1i \#@@Exit\#@@Return to previous menu.\#@@break' $TEMP_FILE"_directory_menu.txt"
       #
       # Insert required header and footer in $TEMP_FILE"_directory_menu.txt".
       sed -i '1i #' $TEMP_FILE"_directory_menu.txt"
       sed -i '1i #! +--------------------------------------------------------------+' $TEMP_FILE"_directory_menu.txt"
       sed -i '1i #! |               (Required header, do not delete).              |' $TEMP_FILE"_directory_menu.txt"
       #
-      if [ "$2" = "Source" ] ; then
+      if [ "$DIRSEL" = "Source" ] ; then
          sed -i '1i #! | Start Listing Source Directory Menu                              |' $TEMP_FILE"_directory_menu.txt"
       else
-         sed -i '1i #! | Start Listing Target Directory Menu                              |' $TEMP_FILE"_directory_menu.txt"
+         sed -i '1i #! | Start Listing Backup Directory Menu                              |' $TEMP_FILE"_directory_menu.txt"
       fi
       #
       echo "#" >> $TEMP_FILE"_directory_menu.txt"
       #
-      if [ "$2" = "Source" ] ; then
+      if [ "$DIRSEL" = "Source" ] ; then
          echo "#! | End Listing Source Directory Menu" >> $TEMP_FILE"_directory_menu.txt"
       else
-         echo "#! | End Listing Target Directory Menu" >> $TEMP_FILE"_directory_menu.txt"
+         echo "#! | End Listing Backup Directory Menu" >> $TEMP_FILE"_directory_menu.txt"
       fi
       #
-      GENERATED_FILE=$THIS_DIR/$THIS_FILE"_directory_menu_generated.lib"
+      #-------------------------------------------------------------------
+      # Create the menu from the menu item lines.
+      #-------------------------------------------------------------------
       #
-      # Create generated menu script from array data.
-      #
-      # Note: ***If Sub-Menu title contains spaces,
-      #       ***the size of the menu window will be too narrow.
-      #
-      # Menu title MUST substitute underscores for spaces.
-      MENU_TITLE="$2_Directory_Menu"
-      #
-      #
-      #==================================================================
-      # EDIT THE LINE BELOW TO DEFINE $ARRAY_FILE AS THE ACTUAL FILE NAME
-      # (LIBRARY) WHERE THE MENU ITEM DATA IS LOCATED.
-      # THE LINES OF DATA ARE PREFIXED BY "#@@".
-      #==================================================================
-      #
-      #
-      # Specify library file name with menu item data.
-      #ARRAY_FILE=$TEMP_FILE"_device_menu.txt"
-      ARRAY_FILE=$TEMP_FILE"_directory_menu.txt"
-      #
-      # Create arrays from data.
-      f_menu_arrays $ARRAY_FILE
-      #
-      f_menu_main_all_menus $1 "$MENU_TITLE" $TEMP_FILE"_directory_menu.txt"
+      f_menu_main_all_menus $1 $DIRSEL"_Directory_Menu" $TEMP_FILE"_directory_menu.txt"
       #
       # Was a local device to mount selected?
       if [ -z "$ANS" ] ; then
@@ -432,8 +533,8 @@ f_any_select () {
          return 1
       fi
       #
-      # The generated menu above, "$2_Directory_Menu" runs f_source_target_selected
-      # Which outputs ANS (the directory path), SOURCE/TARGET_SERVER_NAME,SOURCE/TARGET_DIR.
+      # The generated menu above, "$DIRSEL_Directory_Menu" runs f_source_target_selected
+      # Which outputs ANS (the directory path), SOURCE/BACKUP_SERVER_NAME,SOURCE/BACKUP_DIR.
       LOCAL_DIR=$ANS
       #
       LOCAL_SERVER_NAME=$(cat /etc/hostname)
@@ -454,21 +555,146 @@ f_any_select () {
       fi
       #
       # Delete temporary file.
-      if [ -e $TEMP_FILE"_directory_menu.txt" ] ; then
-         rm $TEMP_FILE"_directory_menu.txt"
+      if [ -e $THIS_DIR/$TEMP_FILE"_UUID_alias.txt" ] ; then
+         rm $THIS_DIR/$THIS_FILE$/$TEMP_FILE"_UUID_alias.txt"
       fi
       #
       # Delete temporary file.
-      if [ -e $THIS_DIR/$THIS_FILE"_menu_local_storage_generated.lib" ] ; then
-         rm $THIS_DIR/$THIS_FILE"_menu_local_storage_generated.lib"
-      fi
-      #
-      # Delete temporary file.
-      if [ -e $THIS_DIR/$THIS_FILE"_menu_local_storage_temp.txt" ] ; then
-         rm $THIS_DIR/$THIS_FILE"_menu_local_storage_temp.txt"
+      if [ -e $THIS_DIR/$TEMP_FILE"_directory_menu.txt" ] ; then
+         rm $THIS_DIR/$TEMP_FILE"_directory_menu.txt"
       fi
       #
 } # End of function f_any_select.
+#
+# +----------------------------------------+
+# |         Function f_UUID_alias          |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
+#          $2 - Temporary Data file.
+#    Uses: DELIM, UUID_ALIAS, UUID_TEST.
+# Outputs: $TEMP_FILE"_directory_menu_2.txt"
+#
+# Summary: Insert UUID abbreviations for any UUID without UUID Alias.
+#          Substitute last 5 characters of UUID for full UUID.
+#          This makes it easier to read and to remember.
+#
+# Dependencies: None.
+#
+f_UUID_alias () {
+      #
+      #-------------------------------------------------------------------
+      # Substitute UUIDs for Alias Names.
+      #-------------------------------------------------------------------
+      #
+      # Display text (all lines beginning ("^") with $DELIM.
+      # sed substitutes null for "#=" at the beginning of each line
+      # so it is not printed.
+      #
+      DELIM="#%#"
+      #
+      # Display text (all lines beginning ("^") with %DELIM but do not print $DELIM).
+      # sed substitutes null for $DELIM at the beginning of each line
+      # so it is not printed.
+      sed --silent "s|^$DELIM||p" server_rsync.sh > $2
+      sed -i 's/ //g' $2
+      #
+      # Substitute UUID Alias Name for UUID within menu items.
+      while read LINE
+            do
+               # Get UUID in alias table
+               UUID_TEST=$(echo $LINE | awk -F "$DELIM" '{ print $1 }')
+               # Get UUID alias.
+               UUID_ALIAS=$(echo $LINE | awk -F "$DELIM" '{ print $2 }')
+               # Substitute UUID alias for UUID.
+               sed -i "s/$UUID_TEST/$UUID_ALIAS/g" $TEMP_FILE"_directory_menu_2.txt"
+            done < $2
+      #
+      #-------------------------------------------------------------------
+      # Insert UUID abbreviations for any UUID without UUID Alias.
+      # Substitute last 5 characters of UUID for full UUID.
+      # This makes it easier to read and to remember.
+      #-------------------------------------------------------------------
+      f_UUID_truncate $1 $TEMP_FILE"_directory_menu_2.txt"
+      #
+      #
+} # End of function f_UUID_alias.
+#
+# +----------------------------------------+
+# |        Function f_UUID_truncate        |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
+#          $2 - Temporary Data file.
+#    Uses: DELIM, UUID_ALIAS, UUID_TEST.
+# Outputs: $2 - Temporary Data file.
+#
+# Summary: Insert UUID abbreviations for any UUID without UUID Alias.
+#          Substitute last 5 characters of UUID for full UUID.
+#          This makes it easier to read and to remember.
+#
+# Dependencies: None.
+#
+f_UUID_truncate () {
+      #
+      DELIM="#@@"
+      UUID_ALIAS=""
+      UUID_TEST=""
+      #
+      while read LINE
+            do
+               case $LINE in
+                    # UUID alpha-numeric characters: 8[-]4[-]4[-]4[-]12
+                    # Any pattern with double-slash is not a UUID pattern
+                    # so filter them out.
+                    *//*-*-*-*-*)
+                       UUID_TEST=""
+                       UUID_ALIAS=""
+                    ;;
+                    # Match remaining UUID pattern.
+                    *-*-*-*-*)
+                       UUID_TEST=$(echo $LINE | awk -F "$DELIM" '{ print $2 }')
+                       # Get the last 5-characters of the UUID.
+                       if [ -n "$UUID_TEST" ] ; then
+                          # Add "SSD" to string because f_last_log_date looks for that string.
+                          UUID_ALIAS=${UUID_TEST:31:36}"_SSD"
+                          sed -i "s/$UUID_TEST/$UUID_ALIAS/g" $2
+                       fi
+                    ;;
+               esac
+            done < $2
+      unset DELIM UUID_TEST UUID_ALIAS
+      #
+} # End of function f_UUID_truncate.
+#
+# +----------------------------------------+
+# |        Function f_last_log_date        |
+# +----------------------------------------+
+#
+#  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
+#          $2 - $TEMP_FILE"_last_log.txt".
+#    Uses: None.
+# Outputs: $TEMP_FILE"_directory_menu_2.txt"
+#
+# Summary: Extract the date of the backup from the temp file.
+#          of the mount-point and select it as the BACKUP_DIR so that the
+#          oldest backup is over-written by the current backup.
+#
+# Dependencies: None.
+#
+f_last_log_date () {
+      #
+      #
+      # Put last rsync date in comment field of menu item.
+      while read LINE
+            do
+               DEVICE=$(echo $LINE | awk '{ print $1 }')
+               LAST_DATE=$(echo $LINE | awk '{ print $2 }')
+               # If a line contains $DEVICE, insert the $LAST_DATE into the menu item description of the line.
+               sed -i "/$DEVICE/s/_SSD#@@/_SSD#@@$LAST_DATE /g" $TEMP_FILE"_directory_menu_2.txt"
+            done < $2
+      #
+} # End of function f_last_log_date.
 #
 # +----------------------------------------+
 # |             Function f_fzf             |
@@ -480,7 +706,7 @@ f_any_select () {
 #
 # Summary: Use application fzf to find the oldest rsync log file which has
 #          the date of the backup in the file name. Then you can take note
-#          of the mount-point and select it as the TARGET_DIR so that the
+#          of the mount-point and select it as the BACKUP_DIR so that the
 #          oldest backup is over-written by the current backup.
 #
 # Dependencies: fzf.
@@ -500,13 +726,13 @@ f_fzf () {
          #       2      Error
          #       130    Interrupted with CTRL-C or ESC
          #
-         f_message text "OK" "Search for oldest server_rsync log file" "Find the oldest server_rsync log file and take note of the USB device (sda, sdb, sdc, or sdd).\n\nUse that USB 'sd' device as the TARGET_DIR in the 'Target Directory Menu'."
+         f_message text "OK" "Search for oldest server_rsync log file" "Find the oldest server_rsync log file and take note of the USB device (sda, sdb, sdc, or sdd).\n\nUse that USB 'sd' device as the BACKUP_DIR in the 'Backup Directory Menu'."
          # Blank the screen.
          clear
          #
          # Log File format:
          # rsync_server_FROM_[ PC_SOURCE ]_[ SOURCE_DIR ]_TIMESTAMP_[ DATE-TIME ].log
-         fzf --no-multi --query=^rsync_server_FROM_scotty --preview 'less {}'
+         fzf --no-multi --query=^rsync_server_FROM_PC_scotty --preview 'less {}'
       else
          # No, "fzf" is not installed.
          f_message $1 "OK" "Search for oldest server_rsync log file" "Check to see which mount-point has the oldest log file"
@@ -520,16 +746,16 @@ f_fzf () {
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
-#          $2 - "Source" or "Target".
-#          $3 - Menu choice data.
+#          $2 - "Source" or "Backup".
+#          $3 - Default Source or Backup directory.
 #    Uses: None.
 # Outputs: ANS,
 #          SOURCE_DIR, SOURCE_SERVER_NAME,
-#          TARGET_DIR, TARGET_SERVER_NAME.
+#          BACKUP_DIR, BACKUP_SERVER_NAME.
 #
-# Summary: When a directory is chosen from the  "Storage Device Menu",
-#          this function is run to acknowledge the menu item chosen and
-#          to set the chosen menu item to $ANS.
+# Summary: When a mount-point is chosen from the  "Storage Device Menu",
+#          this function is run to set the default directory and
+#          to set the chosen menu item to either $SOURCE_DIR or $BACKUP_DIR.
 #
 # Dependencies: f_any_select.
 #
@@ -545,10 +771,20 @@ f_source_target_selected () {
       #
       # Substitute "/" for "~" to restore true directory name.
       # Output directory name, set $ANS to directory name string.
-      ANS="/"$(echo $3 | sed 's|~|/|g')
+
+      # If $3 begins without a forward slash.
+      case $3 in
+           /*)
+              DEFAULT_DIR=$(echo $3 | sed 's|~|/|g')
+           ;;
+           *)
+              DEFAULT_DIR="/"$(echo $3 | sed 's|~|/|g')
+           ;;
+      esac
+      #
       case $2 in
            Source)
-              f_select_dir $1 "$2 Directory" "$ANS" 1
+              f_select_dir $1 "$2 Directory" "$DEFAULT_DIR" 1
               #
               # Did the user try to Cancel or Esc?
               if [ $ERROR -eq 0 ] ; then
@@ -556,7 +792,7 @@ f_source_target_selected () {
                  # Set Source Directory.
                  SOURCE_DIR="$ANS"
                  #
-                 # Set Source server name.
+                 # Set Source server name i.e. /mnt/[Source Server Name]/[share-point directory].
                  SOURCE_SERVER_NAME=$(findmnt --noheadings --target $SOURCE_DIR | awk '{ print $1 }' | awk -F "/" '{ print $3 }')
                  #
                  case $SOURCE_DIR in
@@ -567,7 +803,7 @@ f_source_target_selected () {
                           # Trailing slash is missing.
                           # Add trailing slash.
                           # Add trailing (/) slash if it is missing so that files within $SOURCE_DIR are rsynced.
-                          # Otherwise the entire directory $SOURCE_DIR will be created as a sub-directory of $TARGET_DIR.
+                          # Otherwise the entire directory $SOURCE_DIR will be created as a sub-directory of $BACKUP_DIR.
                           SOURCE_DIR=$(echo -n $SOURCE_DIR"/" )
                       ;;
                  esac
@@ -580,35 +816,35 @@ f_source_target_selected () {
                  f_message $1 "NOK" "Returning to Previous Menu" "No directory selected, returning to $2 Directory Menu."
               fi
            ;;
-           Target)
-              f_select_dir $1 "Recipient $2 Directory" "$ANS" 1
+           Backup)
+              f_select_dir $1 "Recipient $2 Directory" "$DEFAULT_DIR" 1
               #
               # Did the user try to Cancel or Esc?
               if [ $ERROR -eq 0 ] ; then
                  # No, proceed with rsync process.
-                 # Set Source Directory.
-                 TARGET_DIR="$ANS"
+                 # Set Back-up Directory.
+                 BACKUP_DIR="$ANS"
                  #
-                 # Set Target server name.
-                 TARGET_SERVER_NAME=$(findmnt --noheadings --target $TARGET_DIR | awk '{ print $1 }' | awk -F "/" '{ print $3 }')
+                 # Set Back-up server name.
+                 BACKUP_SERVER_NAME=$LOCAL_PC_NAME
                  #
-                 # Add trailing (/) slash if it is missing so that files within $TARGET_DIR are rsynced.
-                 # Otherwise the entire directory $SOURCE_DIR will be created as a sub-directory of $TARGET_DIR.
-                 case $TARGET_DIR in
+                 # Add trailing (/) slash if it is missing so that files within $BACKUP_DIR are rsynced.
+                 # Otherwise the entire directory $SOURCE_DIR will be created as a sub-directory of $BACKUP_DIR.
+                 case $BACKUP_DIR in
                       */)
                           # Trailing slash is included and not missing.
                       ;;
                       *)
                           # Trailing slash is missing.
                           # Add trailing slash.
-                          TARGET_DIR=$(echo -n $TARGET_DIR"/" )
+                          BACKUP_DIR=$(echo -n $BACKUP_DIR"/" )
                       ;;
                  esac
-                 # Exit from Storage Target Device Menu
+                 # Exit from Storage Backup Device Menu
                  CHOICE="QUIT"
               else
                  # Yes, Cancel or Esc.
-                 TARGET_DIR=""
+                 BACKUP_DIR=""
                  f_message $1 "NOK" "Returning to Previous Menu" "No directory selected, returning to $2 Directory Menu."
               fi
            ;;
@@ -617,95 +853,39 @@ f_source_target_selected () {
 } # End of function f_source_target_selected.
 #
 # +----------------------------------------+
-# |      Function f_choose_source_dir      |
-# +----------------------------------------+
-#
-#  Inputs: $1 - "text", "dialog" or "whiptail" The command-line user-interface in use.
-#          $2 - SOURCE_DIR - Source directory.
-#    Uses: None.
-# Outputs: ERROR, SOURCE_DIR.
-#
-# Summary: Set SOURCE_DIR to user-entered directory names.
-#
-f_choose_source_dir () {
-      #
-      # Choose the Source Directory.
-      f_select_dir $1 "Select Source Directory" "$2" 1
-      #
-      SOURCE_DIR=$ANS
-      #
-      # Did the user try to Cancel or Esc?
-      if [ $ERROR -eq 0 ] ; then
-         # No, proceed with rsync process.
-         SOURCE_DIR=$ANS
-      else
-         SOURCE_DIR=""
-      fi
-      #
-} # End of function f_choose_source_dir.
-#
-# +----------------------------------------+
-# |      Function f_choose_target_dir      |
-# +----------------------------------------+
-#
-#  Inputs: $1 - "text", "dialog" or "whiptail" The command-line user-interface in use.
-#          $2 - TARGET_DIR - Target directory.
-#    Uses: None.
-# Outputs: ERROR, TARGET_DIR.
-#
-# Summary: Set TARGET_DIR to user-entered directory names.
-#
-f_choose_target_dir () {
-      #
-      # Choose the Target Directory.
-      f_select_dir $1 "Select Target Directory" "$2" 1
-      #
-      # Did the user try to Cancel or Esc?
-      if [ $ERROR -eq 0 ] ; then
-         # No, proceed with rsync process.
-         TARGET_DIR=$ANS
-      else
-         TARGET_DIR=""
-      fi
-      #
-} # End of function f_choose_target_dir.
-#
-# +----------------------------------------+
 # |           Function f_check_dirs        |
 # +----------------------------------------+
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The command-line user-interface in use.
 #          $2 - SOURCE_DIR - Source directory.
-#          $3 - TARGET_DIR - Target directory.
+#          $3 - BACKUP_DIR - Backup directory.
 #    Uses: X.
 # Outputs: ERROR.
 #
-# Summary: Check if the directories SOURCE_DIR and TARGET_DIR exist.
+# Summary: Check if the directories SOURCE_DIR and BACKUP_DIR exist.
 #
 f_check_dirs () {
       #
-      if [ -d $2 ] && [ -d $3 ] ; then
-         # SOURCE_DIR and TARGET_DIR directories exist.
+      if [ -n $2 ] && [ -n $3 ] && [ -d $2 ] && [ -d $3 ] ; then
+         # SOURCE_DIR and BACKUP_DIR directories exist.
          ERROR=0
-         # Check if TARGET_DIR is a sub-directory of the SOURCE_DIR
+         # Check if BACKUP_DIR is a sub-directory of the SOURCE_DIR
          # If it is, rsync will go into a recursive non-ending loop.
          case $3 in
               $2*)
-                  # Invalid TARGET_DIR.
+                  # Invalid BACKUP_DIR.
                   ERROR=1
                   #
-                  echo "Target Directory is a sub-directory of the Source Directory." > $TEMP_FILE
+                  echo "Backup Directory is a sub-directory of the Source Directory." > $TEMP_FILE
                   echo >> $TEMP_FILE
-                  echo "SOURCE_DIR=$SOURCE_DIR" >> $TEMP_FILE
+                  echo "SOURCE_DIR=$2" >> $TEMP_FILE
                   echo >> $TEMP_FILE
-                  echo "TARGET_DIR=$TARGET_DIR" >> $TEMP_FILE
+                  echo "BACKUP_DIR=$3" >> $TEMP_FILE
                   echo >> $TEMP_FILE
-                  echo "Choose another Target Directory." >> $TEMP_FILE
+                  echo "Choose another Backup Directory." >> $TEMP_FILE
                   #
                   f_message $1 "OK" "Directory Error" $TEMP_FILE
                   #
-                  # Choose the Target Directory.
-                  f_choose_target_dir $1 $3
               ;;
          esac
       else
@@ -715,7 +895,7 @@ f_check_dirs () {
          if [ ! -d $2 ] ; then
             echo "Source Directory does not exist." > $TEMP_FILE
             echo >> $TEMP_FILE
-            echo "$SOURCE_DIR" >> $TEMP_FILE
+            echo "$2" >> $TEMP_FILE
             echo  >> $TEMP_FILE
             echo "Server-Rsync backup aborted due to missing directory." >> $TEMP_FILE
             #
@@ -723,21 +903,21 @@ f_check_dirs () {
          fi
          #
          if [ ! -d $3 ] ; then
-            echo "Target Directory does not exist." > $TEMP_FILE
+            echo "Backup Directory does not exist." > $TEMP_FILE
             echo >> $TEMP_FILE
-            echo "$TARGET_DIR" >> $TEMP_FILE
+            echo "$3" >> $TEMP_FILE
             echo  >> $TEMP_FILE
             echo "Server-Rsync backup aborted due to missing directory." >> $TEMP_FILE
             echo  >> $TEMP_FILE
-            echo "Does the Back-up Directory need to be created?" >> $TEMP_FILE
+            echo "Does the Backup Directory need to be created?" >> $TEMP_FILE
             echo  >> $TEMP_FILE
             echo  >> $TEMP_FILE
-            echo "You need to create a Back-up Directory with the format:" >> $TEMP_FILE
+            echo "You need to create a Backup Directory with the format:" >> $TEMP_FILE
             echo  >> $TEMP_FILE
             echo "     /[mount-point]/server_rsync/[hostname of source server]/[sharename]"  >> $TEMP_FILE
             echo "i.e. /media/PC_Bob_backup/sda1/server_rsync/PC_Sam_source/public_files"  >> $TEMP_FILE
             echo  >> $TEMP_FILE
-            echo "Press OK to display Source/Back-up directory trees" >> $TEMP_FILE
+            echo "Press OK to display Source/Backup directory trees" >> $TEMP_FILE
             #
             f_message $1 "OK" "Directory Error" $TEMP_FILE
             #
@@ -753,10 +933,10 @@ f_check_dirs () {
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE_DIR Source directory.
-#          $3 - TARGET_DIR Target directory.
+#          $3 - BACKUP_DIR BACKUP directory.
 #          $4 - Basename Log file of rsync command (without /var/log/rsync).
 #          $5 - SOURCE_SERVER_NAME Name of Source file server.
-#          $6 - TARGET_SERVER_NAME Name of Target file server.
+#          $6 - BACKUP_SERVER_NAME Name of Backup file server.
 #          ERROR.
 #    Uses: ANS
 # Outputs: None.
@@ -773,7 +953,7 @@ f_go_nogo_rsync () {
          f_abort $1
       fi
       #
-      # Do the SOURCE and TARGET directories exist?
+      # Do the SOURCE and BACKUP directories exist?
       f_check_dirs $1 "$2" "$3"
       if [ $ERROR -eq 0 ] ; then
          # Yes, directories exists.
@@ -791,10 +971,10 @@ f_go_nogo_rsync () {
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE_DIR Source directory.
-#          $3 - TARGET_DIR Target directory.
+#          $3 - BACKUP_DIR Backup directory.
 #          $4 - Basename Log file of rsync command (without /var/log/rsync).
 #          $5 - SOURCE_SERVER_NAME Name of Source file server.
-#          $6 - TARGET_SERVER_NAME Name of Target file server.
+#          $6 - BACKUP_SERVER_NAME Name of Backup file server.
 #          ERROR.
 #    Uses: ANS, DIR_SIZE.
 # Outputs: None.
@@ -810,7 +990,7 @@ f_go_nogo_rsync_2 () {
       echo "From SOURCE directory:" >> $TEMP_FILE
       echo "$2" >> $TEMP_FILE
       echo >> $TEMP_FILE
-      echo "To TARGET directory:" >> $TEMP_FILE
+      echo "To BACKUP directory:" >> $TEMP_FILE
       echo "$3" >> $TEMP_FILE
       echo >> $TEMP_FILE
       echo "Log file:" >> $TEMP_FILE
@@ -819,9 +999,9 @@ f_go_nogo_rsync_2 () {
       echo "Is this correct?" >> $TEMP_FILE
       echo "Next screen will confirm choice." >> $TEMP_FILE
       #
-      f_message $1 "OK" "Summary Before Rsync Back-up" $TEMP_FILE
+      f_message $1 "OK" "Summary Before Rsync Backup" $TEMP_FILE
       #
-      f_yn_question $1 "Y" "Confirmation of SOURCE/TARGET" "Proceed with Rsync backup?"
+      f_yn_question $1 "Y" "Confirmation of SOURCE/BACKUP" "Proceed with Rsync backup?"
       #
       if [ $ANS -eq 0 ] ; then
          # Yes, use selected directories.
@@ -852,10 +1032,10 @@ f_go_nogo_rsync_2 () {
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE_DIR Source directory.
-#          $3 - TARGET_DIR Target directory.
+#          $3 - BACKUP_DIR Backup directory.
 #          $4 - Basename Log file of rsync command (without /var/log/rsync).
 #          $5 - SOURCE_SERVER_NAME Name of Source file server.
-#          $6 - TARGET_SERVER_NAME Name of Target file server.
+#          $6 - BACKUP_SERVER_NAME Name of BACKUP file server.
 #    Uses: None.
 # Outputs: None.
 #
@@ -867,19 +1047,19 @@ f_rsync () {
       #
       # For any mount point to synchronize:
       #
-      # Prerequisites: External device share available on TARGET and
-      #                directory /var/log/rsync exists.
+      # Prerequisites: External device share available on Backup device and
+      #                directory /var/log/rsync.
       #
       # If you edit this shell script, use -n option or --dry-run for testing.
       #
-      #  when SOURCE and/or TARGET mount-point does not exist.
+      #  when SOURCE and/or BACKUP mount-point does not exist.
       #
       if [ ! -d $2 ] || [ ! -d $3 ] ; then
-         # Source and/or Target directories missing.
+         # Source and/or Backup directories missing.
          if [ ! -d $2 ] ; then
             f_message $1 "OK" "!!!WARNING!!!" "Cannot continue, SOURCE directory either does not exist\nor you do not have WRITE permission\nto the SOURCE directory below:\n\n $2"
          else
-            f_message $1 "OK" "!!!WARNING!!!" "Cannot continue, TARGET directory either does not exist\nor you do not have WRITE permission\nto the TARGET directory below:\n\n $3"
+            f_message $1 "OK" "!!!WARNING!!!" "Cannot continue, BACKUP directory either does not exist\nor you do not have WRITE permission\nto the BACKUP directory below:\n\n $3"
          fi
          #
          f_message $1 "OK" "Help Diagnose" "To help diagnose problem, here is a list of mounted drives/devices."
@@ -889,7 +1069,7 @@ f_rsync () {
          #
          f_message $1 "OK" "Restart Needed" "Re-start this script once the external device is mounted properly\nat the mount-point directory."
       else
-         # Source and Target directories validated, use selected directories to rsync.
+         # Source and Backup directories validated, use selected directories to rsync.
          f_rsync2 "$1" "$2" "$3" "$4" "$5" "$6"
       fi
       #
@@ -901,10 +1081,10 @@ f_rsync () {
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE_DIR Source directory.
-#          $3 - TARGET_DIR Target directory.
+#          $3 - BACKUP_DIR BACKUP directory.
 #          $4 - Basename Log file of rsync command (without /var/log/rsync).
 #          $5 - SOURCE_SERVER_NAME Name of Source file server.
-#          $6 - TARGET_SERVER_NAME Name of Target file server.
+#          $6 - BACKUP_SERVER_NAME Name of Backup file server.
 #    Uses: None.
 # Outputs: None.
 #
@@ -941,7 +1121,7 @@ f_rsync2 () {
             #   sudo cp $4 $2
             #fi
             #
-            # Copy $LOG_FILE into $TARGET directory.
+            # Copy $LOG_FILE into $BACKUP directory.
             sudo cp $4 $3
             #
             # Copy log file (on backup media) to localhost's /var/log/rsync directory.
@@ -961,9 +1141,9 @@ f_rsync2 () {
 #
 #  Inputs: $1 - "text", "dialog" or "whiptail" The CLI GUI application in use.
 #          $2 - SOURCE Source directory.
-#          $3 - TARGET Target directory.
+#          $3 - BACKUP BACKUP directory.
 #          $4 - Basename Log file of rsync command (without /var/log/rsync).
-#          TARGET_FILESYSTEM, THIS_FILE, VERSION.
+#          BACKUP_FILESYSTEM, THIS_FILE, VERSION.
 #    Uses: TIME_FILE.
 # Outputs: START_TIME, END_TIME.
 #
@@ -976,7 +1156,7 @@ f_rsync_command () {
       # Record the Start date/time of the rsync backup.
       START_TIME=$(date  +"%A %B %d, %Y -- %T")
       #
-      case $TARGET_FILESYSTEM in
+      case $BACKUP_FILESYSTEM in
            linux | ext2 | ext3 | ext4)
               # If backing up to ext2-ext4 partition, you can preserve permissions, owner, group. Therefore can use -a(rchive) option
               # which also backs up --devices --specials which are irrelevant for this user data.
@@ -991,7 +1171,7 @@ f_rsync_command () {
                  # Yes, confirm rsync command.
                  f_ask_question $1 "Rsync Command" "Enter rsync command (insert '--dry-run' for a trial run)" "sudo rsync --recursive --verbose --itemize-changes --human-readable --size-only --progress --delete --links --times --perms --group --owner --exclude '.gvfs' --log-file=/var/log/rsync/$4 $2 $3"
               else
-                 f_message $1 "OK" "Required Parameters Missing" "Rsync parameters [ SOURCE_DIR ], [ TARGET_DIR ] or [ LOG-FILE ] missing.\nCannot continue with Rsync."
+                 f_message $1 "OK" "Required Parameters Missing" "Rsync parameters [ SOURCE_DIR ], [ BACKUP_DIR ] or [ LOG-FILE ] missing.\nCannot continue with Rsync."
               fi
            ;;
            fat | fat32 | vfat | ntfs | *)
@@ -1007,7 +1187,7 @@ f_rsync_command () {
                  # Yes, confirm rsync command.
                  f_ask_question $1 "Rsync Command" "Enter rsync command (insert '--dry-run' for a trial run)" "sudo rsync --recursive --times --devices --verbose --human-readable --size-only --progress --delete --exclude '.gvfs' --log-file=/var/log/rsync/$4 $2 $3"
               else
-                 f_message $1 "OK" "Required Parameters Missing" "Rsync parameters [ SOURCE_DIR ], [ TARGET_DIR ] or [ LOG-FILE ] missing.\nCannot continue with Rsync."
+                 f_message $1 "OK" "Required Parameters Missing" "Rsync parameters [ SOURCE_DIR ], [ BACKUP_DIR ] or [ LOG-FILE ] missing.\nCannot continue with Rsync."
               fi
            ;;
       esac
@@ -1015,6 +1195,9 @@ f_rsync_command () {
       if [ -n "$ANS" ] ; then
          # Blank the screen.
          clear
+         #
+         # Remove any old log files in Back-up data directory.
+         sudo rm $3*.log
          #
          # Run the rsync command as specified in the $ANS string.
          eval $ANS
@@ -1342,7 +1525,7 @@ f_rsync_command () {
 #          $3 - Start time.
 #          $4 - End time.
 #          $5 - SOURCE_DIR.
-#          $6 - TARGET_DIR.
+#          $6 - BACKUP_DIR.
 #          Rsync log file in /var/log/rsync/$2.
 #          THIS_FILE, VERSION.
 #    Uses: None.
@@ -1366,8 +1549,8 @@ f_log_format () {
       #  from SOURCE directory:
       # [ $SOURCE_DIR ]
       #
-      #    to TARGET directory:
-      # [ $TARGET_DIR ]
+      #    to BACKUP directory:
+      # [ $BACKUP_DIR ]
       #
       #        Log file:
       # [ LOG_FILE.log ]
@@ -1391,7 +1574,7 @@ f_log_format () {
       echo "  from SOURCE directory:" >> $2
       echo $5 >> $2
       echo >> $2
-      echo "    to TARGET directory:" >> $2
+      echo "    to BACKUP directory:" >> $2
       echo $6 >> $2
       echo >> $2
       echo "               Log file:" >> $2
@@ -1432,12 +1615,12 @@ f_log_display () {
          #
          f_message $1 "OK" "(use arrow keys to scroll up/down/side-ways)"  $TEMP_FILE
       else
-         # View the current log file after rsync. Log file is on back-up media.
+         # View the current log file after rsync. Log file is on BACKUP media.
          #
          TEMP_FILE=$THIS_DIR/$THIS_FILE"_temp.txt"
          #
          # Show user message explaining where the rsync log file may be found.
-         f_message $1 "OK" "Log file directory" "The log file may be in a directory on the back-up media\nor it may be in directory /var/log/rsync on the local PC."
+         f_message $1 "OK" "Log file directory" "The log file may be in a directory on the BACKUP media\nor it may be in directory /var/log/rsync on the local PC."
          #
          # User chooses log file, $ANS.
          f_select_file $1 "Select log file" /var/log/rsync 1
@@ -1460,7 +1643,7 @@ f_log_display () {
 # +----------------------------------------+
 #
 #  Inputs: $1=GUI - "dialog" or "whiptail" The CLI GUI application in use.
-#          $2=TARGET_DIR.
+#          $2=BACKUP_DIR.
 #          THIS_DIR, THIS_FILE.
 #    Uses: RUNAPP, FILE_MANAGER.
 # Outputs: None.
@@ -1497,4 +1680,3 @@ f_file_manager_select () {
       unset RUNAPP FILE_MANAGER
       #
 }  # End of function f_file_manager_select.
-#

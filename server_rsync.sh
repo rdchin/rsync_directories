@@ -24,11 +24,43 @@
 # |        Default Variable Values         |
 # +----------------------------------------+
 #
-VERSION="2024-06-25 23:32"
+VERSION="2025-06-14 14:59"
 THIS_FILE=$(basename $0)
 FILE_TO_COMPARE=$THIS_FILE
 TEMP_FILE=$THIS_FILE"_temp.txt"
 GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
+LOCAL_PC_NAME=$HOSTNAME
+#
+#
+#=================================================================
+# EDIT THE LINES BELOW TO  SPECIFY THE USB STORAGE DEVICE FRIENDLY
+# LOCAL MOUNTPOINT DIRECTORY, LOCAL REPOSITORY DIRECTORY AND
+#
+#=================================================================
+#
+#
+#! +--------------------------------------------------------------+
+#! | Start of UUID Storage Device Alias Table                     |
+#! |          (Required header, do not delete).                   |
+#! +--------------------------------------------------------------+
+#
+# UUID [8]   [4]  [4]  [4]    [12]             ALIAS                     SIZE
+#%#8861dbdf-5a39-4361-b382-9c4ab70355fa   #%#Border_Collie_SSD_ext        #%# 233 GB
+#%#491f31af-ead4-4ef3-bee2-b28e15e5fca8   #%#Dalmatian_SSD_ext            #%# 233 GB
+#%#7df11fde-84e4-40ff-a80a-da91ef162fd7   #%#German_Shepherd_SSD_ext      #%# 450 GB
+#%#24b3858f-7eb1-4798-b935-c725ba5470da   #%#Black_Labrador_SSD_ext       #%# 4.5 TB
+#%#244459aa-e5b5-46c5-9dcf-9688ce4888f2   #%#Black_Doberman_SSD_ext       #%# 4.5 TB
+#%#ec71b0e1-5084-497f-9df9-37463ef9b8a0   #%#Great_Dane_SSD_ext           #%# 1.8 TB
+#%#1a740f23-0434-4802-a350-39c8bf2b1ac3   #%#Mastiff_SSD_ext              #%# 1.8 TB
+#%#b1185c83-69d4-4e52-a310-51dd5d1a14f6   #%#Scotty_RAID-1_HDD_int        #%# 1.8 TB
+#%#d21ece60-5a1f-447a-b672-7acacf8e924d   #%#Ginger_Endeavor_SSD_int      #%#  68 GB
+#%#490118ea-b0d3-48c4-b18c-1d837c05b881   #%#Ginger_Manjaro_Linux_SSD_int #%#  85 GB
+#%#d526901f-69cf-4cd0-950f-d2b10738084c   #%#Ginger_Siduction_SSD_int     #%#  85 GB
+#
+#! +--------------------------------------------------------------+
+#! | End of UUID Storage Device Alias Table                       |
+#! |        (Required line, do not delete).                       |
+#! +--------------------------------------------------------------+
 #
 #
 #================================================================
@@ -36,19 +68,9 @@ GENERATED_FILE=$THIS_FILE"_menu_generated.lib"
 # AND TO INCLUDE ALL DEPENDENT SCRIPTS AND LIBRARIES TO DOWNLOAD.
 #
 # ALSO PLEASE EDIT f_check_version
+#
 #================================================================
 #
-#-------------------------------------------------
-# Set variables to check for network connectivity.
-#-------------------------------------------------
-#
-# Ping Local File Server Repository
-# PING_LAN_TARGET="[FILE SERVER NAME]"
-PING_LAN_TARGET="file_server"
-#
-# Ping Web File Server Repository
-# PING_WAN_TARGET="[WEB FILE REPOSITORY]"
-PING_WAN_TARGET="raw.githubusercontent.com"
 #
 #--------------------------------------------------------------
 # Set variables to mount the Local Repository to a mount-point.
@@ -57,12 +79,12 @@ PING_WAN_TARGET="raw.githubusercontent.com"
 # LAN File Server shared directory.
 # SERVER_DIR="[FILE_SERVER_DIRECTORY_NAME_GOES_HERE]"
 # SERVER_DIR="//file_server/files"
-SERVER_DIR="//file_server/files"
+SERVER_DIR="//scotty/files"
 #
 # Local PC mount-point directory.
 # MP_DIR="[LOCAL_MOUNT-POINT_DIRECTORY_NAME_GOES_HERE]"
 # MP_DIR="/mnt/file_server/files"
-MP_DIR="/mnt/file_server/files"
+MP_DIR="/mnt/scotty/files"
 #
 # Local PC mount-point with LAN File Server Local Repository full directory path.
 # Example:
@@ -70,11 +92,10 @@ MP_DIR="/mnt/file_server/files"
 # Repostory directory under the shared directory is "scripts/BASH/Repository".
 #                 Local PC Mount-point directory is "/mnt/file_server/files".
 #
+# Local PC mount-point with LAN File Server Local Repository full directory path.
 # LOCAL_REPO_DIR="$MP_DIR/[DIRECTORY_PATH_TO_LOCAL_REPOSITORY]"
 # LOCAL_REPO_DIR="$MP_DIR/Local_Repository"
-LOCAL_REPO_DIR="$MP_DIR/Local_Repository"
-#
-TARGET_DIR=$LOCAL_REPO_DIR
+LOCAL_REPO_DIR="$MP_DIR/LIBRARY/PC-stuff/PC-software/BASH_Scripting_Projects/Repository"
 #
 # Web Repository i.e. Hosted by GitHub.com or another web site.
 # WEB_REPOSITORY_URL="raw.githubusercontent.com/user/project/branch"
@@ -89,25 +110,22 @@ WEB_REPOSITORY_URL="raw.githubusercontent.com/rdchin/rsync_directories/master/"
 #=================================================================
 #
 #
-# --------------------------------------------
-# Create a list of all dependent library files
+# --------------------------------------------------------
+# Create a list of all dependent library files and scripts
 # and write to temporary file, FILE_LIST.
-# --------------------------------------------
 #
-# Temporary file FILE_LIST contains a list of file names of dependent
-# scripts and libraries.
+# Temporary file FILE_LIST contains a list of file names
+# of dependent scripts and libraries.
+# --------------------------------------------------------
+#
 FILE_LIST=$THIS_FILE"_file_temp.txt"
 #
 # Format: [File Name]^[Local/Web]^[Local repository directory]^[Web repository directory]
 echo "server_rsync.lib^Local^$LOCAL_REPO_DIR^$WEB_REPOSITORY_URL"          > $FILE_LIST
 echo "common_bash_function.lib^Local^$LOCAL_REPO_DIR^$WEB_REPOSITORY_URL" >> $FILE_LIST
 #
-# Create a list of files FILE_DL_LIST, which need to be downloaded.
-# Format: [File Name]^[Local/Web]^[Local repository directory]^[web repository directory]
-# From FILE_LIST (list of script and library files), find the files which
-# need to be downloaded and put those file names in FILE_DL_LIST.
-#
-# Format: [File Name]^[Local/Web]^[Local repository directory]^[web repository directory]
+# Create a name for a temporary file which will have a list of files which need to be downloaded.
+# For further documentation and usage, please see function, fdl_download_missing_scripts.
 FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #
 # +----------------------------------------+
@@ -197,10 +215,97 @@ FILE_DL_LIST=$THIS_FILE"_file_dl_temp.txt"
 #%                                        +--file03
 #
 # +----------------------------------------+
+# |                Code Notes              |
+# +----------------------------------------+
+#
+# To disable the [ OPTION ] --update -u to update the script:
+#    1) Comment out the call to function fdl_download_missing_scripts in
+#       Section "Start of Main Program".
+#
+# To completely delete the [ OPTION ] --update -u to update the script:
+#    1) Delete the call to function fdl_download_missing_scripts in
+#       Section "Start of Main Program".
+#    2) Delete all functions beginning with "f_dl"
+#    3) Delete instructions to update script in Section "Help and Usage".
+#
+# To disable the Main Menu:
+#    1) Comment out the call to function f_menu_main_all_menus under
+#       "Run Main Code" in Section "Start of Main Program".
+#    2) Add calls to desired functions under "Run Main Code"
+#       in Section "Start of Main Program".
+#
+# To completely remove the Main Menu and its code:
+#    1) Delete the call to function f_menu_main_all_menus under
+#       "Run Main Code" in Section "Start of Main Program".
+#    2) Add calls to desired functions under "Run Main Code"
+#       in Section "Start of Main Program".
+#    3) Delete the function f_menu_main_all_menus.
+#    4) Delete "Menu Choice Options" in this script located under
+#       Section "Customize Menu choice options below".
+#       The "Menu Choice Options" lines begin with "#@@".
+#
+# +----------------------------------------+
 # |           Code Change History          |
 # +----------------------------------------+
 #
 ## Code Change History
+##
+## 2025-06-14 *Updated to latest standards.
+##            *Section "Default Variable Values" added documentation.
+##            *fdl_download_missing_scripts added documentation.
+##            *Section "UUID Storage Device Alias Table" added entries.
+##
+## 2024-11-15 *f_any_select bug fixed added "\#" to sed commands so that
+##             the rest of the command was not ignored as a comment.
+##
+## 2024-07-21 *f_any_select, f_source_target_selected improved comments
+##             and changed mount-point directory.
+##             changed from: "/media/$USER"
+##             changed   to: "/media/$LOCAL_PC_NAME"
+##
+## 2024-07-18 *f_any_select optimized code.
+##
+## 2024-07-17 *f_any_select bug fix getting the last back-up date for
+##             mount-point /mnt/scotty/files.
+##            *f_alias_UUID added.
+##            *Section "Default Variable Values" in server_rsync.sh
+##             now contains the "UUID Storage Device Alias Table".
+##
+## 2024-07-12 *f_UUID_truncate added to shorten UUIDs by showing only the
+##             last 5 alpha-numeric characters of each UUID for easier
+##             human-readable reference.
+##            *f_any_select depends on f_UUID_truncate.
+##             Changed the default $BACKUP_DIR which is derived from the
+##             basename of the $SOURCE_DIR.
+##
+## 2024-07-10 *f_any_select simplified code by calling f_last_log_date.
+##            *f_last_log_date added.
+##
+## 2024-07-07 *f_any_select rewritten to have local PC use the hostname
+##             rather than UUID.
+##             Date of last backup is now in menu item description.
+##             Code optimized and rewritten.
+##
+## 2024-07-04 *f_any_select changed default Back-up directory.
+##
+## 2024-07-03 *f_any_select optimized code eliminate redundancies.
+##             Use alias names for UUID numbers for easy to remember names.
+##            *Section "Default Variable Values" in server_rsync.lib added
+##             data for the "UUID Storage Device Alias Table" added for the
+##             easy adding of alias names for UUID numbers.
+##            *f_fzf updated search object.
+##            *f_rsync_command added deletion of old log files.
+##
+## 2024-06-30 *f_any_select complete rewrite to use UUIDs rather than
+##             /media/.../sd[a-d]1 which may change when USB devices are
+##             auto-mounted or removed. So the known USB backup devices
+##             and the corresponding friendly easy to remember names are
+##             hard-coded into the function.
+##             Then translate the UUIDs to friendly easy to remember names.
+##
+## 2024-06-28 *f_source_target_selected changed plus many others to rename
+##             variables including "TARGET" to "BACK-UP".
+##            *TO-DO Add Local PC root SSD to Source/Backup Menu.
 ##
 ## 2024-06-24 *Section "Help and Usage with Directory Trees"
 ##             f_any
@@ -1016,21 +1121,24 @@ fdl_download_missing_scripts () {
       TEMP_FILE=$THIS_FILE"_temp.txt"
       #
       # Delete any existing temp file.
-      if [ -r  $2 ] ; then
-         rm  $2
+      if [ -r $2 ] ; then
+         rm $2
       fi
       #
       # ****************************************************
       # Create new list of files that need to be downloaded.
       # ****************************************************
       #
-      # While-loop will read the file names listed in FILE_LIST ($1 list of
-      # script and library files) and detect which are missing and need
-      # to be downloaded and then put those file names in FILE_DL_LIST ($2).
+      # 1. While-loop will read the file names listed in $FILE_LIST ($1)
+      #    (list of script and library files) and detect which are missing and need
+      #    to be downloaded and then put those file names in FILE_DL_LIST ($2).
       #
-      # Download files from Local Repository or Web GitHub Repository
-      # or extract files from the compressed file "cli-app-menu-new-main.zip"
-      # which may be downloaded from the repository on the Github.com website.
+      # 2. Create a list of files FILE_DL_LIST ($2), which need to be downloaded.
+      #    Format: [File Name]^[Local/Web]^[Local repository directory]^[web repository directory]
+      #
+      # 3. Download files from Local Repository or Web GitHub Repository
+      #    or extract files from the compressed file (such as "cli-app-menu-new-main.zip")
+      #    which may be downloaded from the repository on the Github.com website.
       #
       while read LINE
             do
